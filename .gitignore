@@ -18,7 +18,8 @@
 /coverage
 
 # next.js
-/.next/
+.next/
+.vscode/
 /out/
 
 # production
