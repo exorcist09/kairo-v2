@@ -63,12 +63,10 @@ export default function DocsPage({ onClose }: DocsPageProps) {
         {/* Header bar */}
         <div className="flex items-center justify-between border-b border-zinc-900 pb-6 mb-10">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-indigo-600 flex items-center justify-center text-white font-black font-display text-sm shadow-md">
-              K
-            </div>
+            <img src="/favicon.png" alt="Kairo" className="w-9 h-9 object-contain" />
             <div>
-              <span className="text-sm font-bold tracking-tight text-white block">Kairo UI Engine Docs</span>
-              <span className="text-4xs text-zinc-500 uppercase tracking-widest font-mono">NODE-BASED EXECUTION RUNNER • SECURE SANDBOX</span>
+              <span className="text-sm font-bold tracking-tight text-white block">Kairo Engine Docs</span>
+              <span className="text-4xs text-zinc-500 uppercase tracking-widest font-mono">NODE-BASED EXECUTION RUNNER</span>
             </div>
           </div>
           
@@ -132,7 +130,7 @@ export default function DocsPage({ onClose }: DocsPageProps) {
           </div>
 
           {/* Right Explanation space: 9 cols */}
-          <div className="lg:col-span-9 rounded-2xl border border-zinc-850 bg-zinc-950/40 p-6 md:p-8 space-y-8 min-h-[500px]">
+          <div className="lg:col-span-9 rounded-2xl border border-gray-800 bg-zinc-950/40 p-6 md:p-8 space-y-8 min-h-[500px]">
             
             {activeTab === 'overview' && (
               <div className="space-y-6">

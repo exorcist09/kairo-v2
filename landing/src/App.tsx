@@ -18,7 +18,13 @@ import {
   Sparkles,
   Layers,
   Code,
-  Linkedin
+  Linkedin,
+  Cloud,
+  CreditCard,
+  Server,
+  Triangle,
+  Blocks,
+  Hexagon
 } from 'lucide-react';
 import InteractiveCanvas from './components/InteractiveCanvas';
 import SmarterWorkflowSlider from './components/SmarterWorkflowSlider';
@@ -119,7 +125,7 @@ export default function App() {
     }
     setAuthStatus('Authenticating securely...');
     setTimeout(() => {
-      setAuthStatus(`Successfully signed up as ${authEmail}! Welcome to Kairo UI.`);
+      setAuthStatus(`Successfully signed up as ${authEmail}! Welcome to Kairo.`);
       setTimeout(() => {
         setIsSignInOpen(false);
         setIsSignUpOpen(false);
@@ -150,7 +156,7 @@ export default function App() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             
-            {/* Logo Kairo UI */}
+            {/* Logo Kairo  */}
             <div className="flex items-center gap-8">
               <a 
                 id="header-logo"
@@ -158,18 +164,7 @@ export default function App() {
                 onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
                 className="flex items-center gap-1 group focus:outline-none"
               >
-                <span className="text-2xl font-black tracking-tight font-display text-white lowercase">
-                  kair
-                </span>
-                <div className="relative w-6 h-6 flex items-center justify-center mt-1 group-hover:scale-105 transition-transform">
-                  <svg className="w-full h-full overflow-visible" viewBox="0 0 24 24" fill="none">
-                    {/* Circle representing 'o' with a gap */}
-                    <path d="M 17 7 A 7 7 0 1 1 16.99 6.99" stroke="white" strokeWidth="3" strokeLinecap="round" fill="none" />
-                    {/* Launching arrow */}
-                    <path d="M 12 12 L 20 4" stroke="#818cf8" strokeWidth="3" strokeLinecap="round" />
-                    <path d="M 15 4 H 20 V 9" stroke="#818cf8" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </div>
+                <img src="/Kairo.png" alt="Kairo" className="h-6 object-contain" />
               </a>
 
               {/* Desktop links navigation */}
@@ -355,7 +350,7 @@ export default function App() {
       </section>
 
       {/* --- MORE THAN AUTOMATION ACCENT STATEMENT ---- */}
-      <section className="py-20 md:py-28 px-4 bg-zinc-950/20 border-t border-zinc-900/60 relative z-10 text-center">
+      <section className="py-20 md:py-28 px-4 bg-zinc-950/20  border-zinc-900/60 relative z-10 text-center">
         <div className="max-w-4xl mx-auto space-y-6">
           <span className="text-2xs font-extrabold text-indigo-400 uppercase tracking-widest font-mono">
             More Than Automation
@@ -363,9 +358,9 @@ export default function App() {
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight text-white font-display leading-tight max-w-3xl mx-auto">
             Our node-based system lets you build exactly what you need, when you need it, with every connection as intuitive as your own thought process.
           </h2>
-          <p className="text-zinc-500 text-xs sm:text-sm max-w-xl mx-auto leading-relaxed">
-            By avoiding complicated syntax blocks, Kairo UI models tasks into distinct atomic parameters. Drag and drop coordinates, bind schema elements, and query securely without code layers.
-          </p>
+          {/* <p className="text-zinc-500 text-xs sm:text-sm max-w-xl mx-auto leading-relaxed">
+            By avoiding complicated syntax blocks, Kairo models tasks into distinct atomic parameters. Drag and drop coordinates, bind schema elements, and query securely without code layers.
+          </p> */}
         </div>
       </section>
 
@@ -373,32 +368,47 @@ export default function App() {
       <section className="py-10 border-y border-zinc-900/60 bg-[#0b0b0d]">
         <div className="max-w-7xl mx-auto px-4 text-center">
           <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest tracking-[0.2em] mb-7">
-            Tech used build with
+            Build with
           </p>
           
           {/* Typographic representations of trusted tech brands to avoid breaking image assets */}
-          <div className="flex flex-wrap items-center justify-center gap-x-12 gap-y-6 opacity-35 hover:opacity-50 transition-opacity duration-300">
-            <span className="text-sm font-extrabold font-mono text-white tracking-tighter">
-              B U I L D S H I P
-            </span>
-            <span className="text-sm font-bold font-display text-white italic tracking-wider">
-              n8n.io
-            </span>
-            <span className="text-sm font-extrabold text-white">
-              // make
-            </span>
-            <span className="text-sm font-light text-white tracking-widest">
-              _ZAPIER
-            </span>
-            <span className="text-sm font-mono text-zinc-300 tracking-tight font-bold">
-              Gumloop()
-            </span>
-            <span className="text-sm font-bold text-white tracking-tight">
-              ♥ Lovable
-            </span>
-            <span className="text-sm font-display font-extrabold text-white">
-              bolt.new
-            </span>
+          <div className="flex flex-wrap items-center justify-center gap-8 md:gap-12 opacity-50 hover:opacity-100 transition-opacity duration-300">
+            <div className="flex items-center gap-2 text-zinc-300 hover:text-cyan-400 transition-colors">
+              <Hexagon className="w-5 h-5" />
+              <span className="text-sm font-bold font-display tracking-wider">React</span>
+            </div>
+            <div className="flex items-center gap-2 text-zinc-300 hover:text-white transition-colors">
+              <Triangle className="w-5 h-5" />
+              <span className="text-sm font-bold font-display tracking-wider">Next.js</span>
+            </div>
+            <div className="flex items-center gap-2 text-zinc-300 hover:text-green-500 transition-colors">
+              <Server className="w-5 h-5" />
+              <span className="text-sm font-bold font-display tracking-wider">Node.js</span>
+            </div>
+            <div className="flex items-center gap-2 text-zinc-300 hover:text-blue-400 transition-colors">
+              <Database className="w-5 h-5" />
+              <span className="text-sm font-bold font-display tracking-wider">PostgreSQL</span>
+            </div>
+            <div className="flex items-center gap-2 text-zinc-300 hover:text-red-500 transition-colors">
+              <Zap className="w-5 h-5" />
+              <span className="text-sm font-bold font-display tracking-wider">Redis</span>
+            </div>
+            <div className="flex items-center gap-2 text-zinc-300 hover:text-yellow-500 transition-colors">
+              <Blocks className="w-5 h-5" />
+              <span className="text-sm font-bold font-display tracking-wider">BullMQ</span>
+            </div>
+            <div className="flex items-center gap-2 text-zinc-300 hover:text-orange-400 transition-colors">
+              <Cloud className="w-5 h-5" />
+              <span className="text-sm font-bold font-display tracking-wider">AWS</span>
+            </div>
+            <div className="flex items-center gap-2 text-zinc-300 hover:text-blue-500 transition-colors">
+              <Box className="w-5 h-5" />
+              <span className="text-sm font-bold font-display tracking-wider">Docker</span>
+            </div>
+            <div className="flex items-center gap-2 text-zinc-300 hover:text-indigo-400 transition-colors">
+              <CreditCard className="w-5 h-5" />
+              <span className="text-sm font-bold font-display tracking-wider">Payment Gateways</span>
+            </div>
           </div>
         </div>
       </section>
@@ -445,13 +455,7 @@ export default function App() {
             >
               Get Started for Free
             </button>
-            <button 
-              id="cta-footer-templates"
-              onClick={() => setIsTemplatesOpen(true)}
-              className="w-full sm:w-auto px-6 py-2.5 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 font-semibold text-xs rounded-lg transition-all cursor-pointer"
-            >
-              Browse Templates
-            </button>
+            
           </div>
         </div>
       </section>
@@ -470,26 +474,18 @@ export default function App() {
                 onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
                 className="flex items-center gap-1 group focus:outline-none"
               >
-                <div className="w-10 h-10 flex items-center justify-center group-hover:scale-105 transition-transform">
-                  <svg className="w-full h-full overflow-visible" viewBox="0 0 24 24" fill="none">
-                    {/* Standalone brand favicon: circle + purple arrow, transparent background */}
-                    <path d="M 17 7 A 7 7 0 1 1 16.99 6.99" stroke="white" strokeWidth="2.5" strokeLinecap="round" fill="none" />
-                    <path d="M 12 12 L 20 4" stroke="#818cf8" strokeWidth="2.5" strokeLinecap="round" />
-                    <path d="M 15 4 H 20 V 9" stroke="#818cf8" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </div>
-                <span className="font-bold tracking-tight text-md font-display uppercase text-white tracking-widest pl-1">kairo</span>
+                <img src="/Kairo.png" alt="Kairo" className="h-10 object-contain" />
               </a>
               
               <p className="text-zinc-500 text-xs leading-relaxed max-w-sm">
-                Kairo UI empowers teams to design, automate, and orchestrate powerful AI-driven processes—all in one intuitive platform. Map variables visually and deploy instantly.
+                Kairo empowers teams to design, automate, and orchestrate powerful AI-driven processes—all in one intuitive platform. Map variables visually and deploy instantly.
               </p>
             </div>
 
             <div className="space-y-3.5 col-span-1">
               <h5 className="text-[10px] font-bold text-zinc-400 tracking-widest uppercase">Company</h5>
               <ul className="space-y-2">
-                <li><a href="#" onClick={(e) => { e.preventDefault(); alert("Kairo UI is a secure sandbox visualization layer."); }} className="text-zinc-500 hover:text-white transition-colors text-xs leading-none">About</a></li>
+                <li><a href="#" onClick={(e) => { e.preventDefault(); alert("Kairo is a secure sandbox visualization layer."); }} className="text-zinc-500 hover:text-white transition-colors text-xs leading-none">About</a></li>
                 <li><a href="#" onClick={(e) => { e.preventDefault(); alert("Read our engineering blog about high-frequency runners."); }} className="text-zinc-500 hover:text-white transition-colors text-xs leading-none">Blog</a></li>
                 <li><a href="#" onClick={(e) => { e.preventDefault(); alert("Join the Kairo team!"); }} className="text-zinc-500 hover:text-white transition-colors text-xs leading-none">Careers</a></li>
               </ul>
@@ -499,13 +495,13 @@ export default function App() {
               <h5 className="text-[10px] font-bold text-zinc-400 tracking-widest uppercase">Support</h5>
               <ul className="space-y-3">
                 <li><a href="#" onClick={(e) => { e.preventDefault(); alert("Our FAQ contains answers about self-host setups."); }} className="text-zinc-500 hover:text-white transition-colors text-xs">FAQ Docs</a></li>
-                <li><a href="#" onClick={(e) => { e.preventDefault(); alert("Contact support via email at support@kairoui.internal"); }} className="text-zinc-500 hover:text-white transition-colors text-xs">Contact Us</a></li>
+                <li><a href="#" onClick={(e) => { e.preventDefault(); alert("Contact support via email at support@kairo.internal"); }} className="text-zinc-500 hover:text-white transition-colors text-xs">Contact Us</a></li>
                 <li className="pt-2 flex items-center gap-2.5">
                   <a 
                     href="https://linkedin.com" 
                     target="_blank" 
                     rel="noreferrer" 
-                    className="w-8 h-8 rounded-lg bg-zinc-900 border border-zinc-850 hover:border-zinc-800 text-zinc-450 hover:text-white flex items-center justify-center transition-colors hover:bg-zinc-850 shadow-sm"
+                    className="w-8 h-8 rounded-lg bg-zinc-900  text-zinc-450 hover:text-white flex items-center justify-center transition-colors hover:bg-zinc-850 shadow-sm"
                     title="Linkedin"
                   >
                     <Linkedin className="w-4 h-4" />
@@ -514,7 +510,7 @@ export default function App() {
                     href="https://github.com" 
                     target="_blank" 
                     rel="noreferrer" 
-                    className="w-8 h-8 rounded-lg bg-zinc-900 border border-zinc-850 hover:border-zinc-800 text-zinc-450 hover:text-white flex items-center justify-center transition-colors hover:bg-zinc-850 shadow-sm"
+                    className="w-8 h-8 rounded-lg bg-zinc-900  text-zinc-450 hover:text-white flex items-center justify-center transition-colors hover:bg-zinc-850 shadow-sm"
                     title="Github"
                   >
                     <Github className="w-4 h-4" />
@@ -527,10 +523,10 @@ export default function App() {
 
           {/* Bottom copyright line */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between pt-8 gap-4">
-            <span className="text-zinc-650 text-4xs font-mono select-none">
-              © COPYRIGHT 2026 KAIRO UI • ALL RIGHTS RESERVED
+            <span className="text-zinc-650 text-xs font-mono select-none">
+              © COPYRIGHT 2026 KAIRO  • ALL RIGHTS RESERVED
             </span>
-            <div className="flex items-center gap-4 text-4xs font-mono text-zinc-650">
+            <div className="flex items-center gap-4 text-xs font-mono text-zinc-650">
               <a href="#" onClick={(e) => { e.preventDefault(); alert("Privacy Policy: Local states persist locally on your sandbox."); }} className="hover:text-zinc-300">Privacy Policy</a>
               <span>•</span>
               <a href="#" onClick={(e) => { e.preventDefault(); alert("Terms of Service: Sandboxed visual nodes remain subject to workspace rules."); }} className="hover:text-zinc-300">Terms of Service</a>
@@ -541,7 +537,7 @@ export default function App() {
         {/* Huge aesthetic branding outline watermark at the absolute bottom margin */}
         <div className="absolute bottom-4 inset-x-0 overflow-hidden select-none pointer-events-none text-center">
           <span className="font-display font-extrabold text-[12vw] tracking-tighter text-zinc-950 block leading-none opacity-40 select-none">
-            Kairo UI
+            Kairo
           </span>
         </div>
       </footer>
@@ -566,7 +562,7 @@ export default function App() {
               <span className="text-3xs font-bold text-blue-500 uppercase tracking-widest font-mono">
                 SECURE CONSOLE ENTRY
               </span>
-              <h4 className="text-lg font-bold text-white font-display">Sign In to Kairo UI</h4>
+              <h4 className="text-lg font-bold text-white font-display">Sign In to Kairo </h4>
               <p className="text-zinc-500 text-xs">Enter your sandbox keys to orchestrate current nodes.</p>
             </div>
 
@@ -610,7 +606,7 @@ export default function App() {
             </form>
 
             <div className="pt-2 text-center text-[10px] text-zinc-500">
-              New to Kairo UI?{' '}
+              New to Kairo?{' '}
               <button onClick={() => { setIsSignInOpen(false); setIsSignUpOpen(true); }} className="text-indigo-400 underline hover:text-indigo-300 focus:outline-none">
                 Spawn key account
               </button>

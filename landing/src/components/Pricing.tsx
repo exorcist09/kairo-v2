@@ -48,8 +48,8 @@ export default function Pricing() {
       id: 'pro',
       name: 'Developer Pro',
       description: 'Ideal for professional engineers automating core production tasks & integrating smart tools.',
-      priceMonthly: 2499,
-      priceAnnually: 1899,
+      priceMonthly: 1800,
+      priceAnnually: 1500,
       features: [
         'Unlimited active execution pipelines',
         'Priority high-throughput model queues',
@@ -67,8 +67,8 @@ export default function Pricing() {
       id: 'enterprise',
       name: 'Enterprise Scale',
       description: 'Custom compliance, dedicated compute clusters, self-hosting options, and strict SLAs.',
-      priceMonthly: 9999,
-      priceAnnually: 7999,
+      priceMonthly: 3000,
+      priceAnnually: 2300,
       features: [
         'Dedicated isolated sandbox execution',
         'Sub-second latency execution tunnels',
@@ -84,7 +84,7 @@ export default function Pricing() {
   ];
 
   const handleCtaClick = (planName: string) => {
-    setSuccessPaidMessage(`Successfully selected ${planName}! Thank you for choosing Kairo UI.`);
+    setSuccessPaidMessage(`Successfully selected ${planName}! Thank you for choosing Kairo.`);
     setTimeout(() => {
       setSuccessPaidMessage(null);
     }, 4500);
@@ -128,9 +128,9 @@ export default function Pricing() {
           </button>
           <span className={`text-xs font-medium transition-colors ${isAnnual ? 'text-white' : 'text-zinc-500'} flex items-center gap-1.5`}>
             Annually
-            <span className="px-1.5 py-0.5 bg-emerald-950 text-emerald-400 text-[10px] font-bold rounded">
+            {/* <span className="px-1.5 py-0.5 bg-emerald-950 text-emerald-400 text-[10px] font-bold rounded">
               Save 24%
-            </span>
+            </span> */}
           </span>
         </div>
       </div>
@@ -157,12 +157,12 @@ export default function Pricing() {
               className={`rounded-2xl border bg-zinc-950/80 p-6 flex flex-col justify-between transition-all duration-300 cursor-pointer relative ${
                 plan.isPopular 
                   ? 'border-indigo-500 bg-gradient-to-b from-[#0e0f11]/90 to-zinc-950/80 shadow-2xl shadow-indigo-500/5' 
-                  : 'border-zinc-850 hover:border-zinc-700 hover:bg-zinc-900/40'
+                  : 'border-gray-800 hover:border-zinc-700 hover:bg-zinc-900/40'
               }`}
             >
               {/* Highlight badge for popular plan */}
               {plan.isPopular && (
-                <div className="absolute top-0 right-1/2 translate-y-[-50%] translate-x-[50%] px-3 py-1 bg-gradient-to-r from-indigo-650 to-indigo-600 rounded-full text-white text-[10px] font-extrabold tracking-wider uppercase shadow-xl shadow-indigo-500/20">
+                <div className="absolute border border-indigo-500 top-0 right-1/2 translate-y-[-50%] translate-x-[50%] px-3 py-1 bg-indigo-600  rounded-full text-white text-[10px] font-extrabold tracking-wider uppercase shadow-xl shadow-indigo-500/20">
                   Most Popular
                 </div>
               )}

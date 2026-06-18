@@ -16,7 +16,7 @@ export const metadata: Metadata = {
   title: "Kairo",
   description: "Visual Workflow and Job scheduler",
   icons: {
-    icon: "/kairo-favicon.png",
+    icon: "/favicon.png",
   },
 };
 

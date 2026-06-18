@@ -129,7 +129,7 @@ export default function SmarterWorkflowSlider() {
       {/* Horizontal scrolling slider track */}
       <div 
         ref={scrollContainerRef}
-        className="flex gap-6 overflow-x-auto scrollbar-none snap-x snap-mandatory py-4 -mx-4 px-4 select-none justify-start lg:justify-center"
+        className="flex gap-6 overflow-x-auto scrollbar-none snap-x snap-mandatory py-4 px-[calc(50%-140px)] sm:px-[calc(50%-160px)] md:px-[calc(50%-175px)] select-none"
       >
         {steps.map((step, index) => {
           // Select step icons dynamically
@@ -144,7 +144,7 @@ export default function SmarterWorkflowSlider() {
             <div
               key={step.id}
               id={`workflow-card-${step.id}`}
-              className="w-[280px] sm:w-[320px] md:w-[350px] shrink-0 snap-center rounded-2xl border border-zinc-850 bg-[#0c0c0e]/90 p-6 relative group flow-root transition-all duration-300 hover:border-indigo-500/50 hover:translate-y-[-4px]"
+              className="w-[280px] sm:w-[320px] md:w-[350px] shrink-0 snap-center rounded-2xl border border-gray-800 bg-[#0c0c0e]/90 p-6 relative group flow-root transition-all duration-300 hover:border-indigo-500/50 hover:translate-y-[-4px]"
             >
               {/* Blur gradient background glows in card on hover */}
               <div className={`absolute inset-0 bg-gradient-to-br ${step.glowColor} opacity-20 group-hover:opacity-40 transition-opacity duration-300 rounded-2xl pointer-events-none`} />
