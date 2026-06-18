@@ -1,6 +1,5 @@
-<img width="480" height="180" alt="Kairo" src="https://github.com/user-attachments/assets/f577e106-7dd8-4a63-b360-c67c212e33e3" />
+<!-- <img width="480" height="180" alt="Kairo" src="https://github.com/user-attachments/assets/f577e106-7dd8-4a63-b360-c67c212e33e3" /> -->
 
----
 Kairo is a visual workflow automation platform and job scheduler.
 
 It enables users to build, configure, and execute automation workflows using an interactive drag-and-drop editor while providing a scalable backend architecture for workflow execution and scheduling.
