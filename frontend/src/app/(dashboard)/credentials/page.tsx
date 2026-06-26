@@ -1,5 +1,5 @@
-export default function Credentials() {
-    return (
-        <div></div>
-    );
+import CredentialsSection from "@/pages/Credentialspage/Credentials";
+
+export default function Page() {
+  return <CredentialsSection />;
 }

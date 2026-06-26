@@ -1,5 +1,5 @@
-export default function Billing() {
-    return (
-        <div></div>
-    );
+import BillingSection from "@/pages/Billingpage/Billing";
+
+export default function Page() {
+  return <BillingSection />;
 }

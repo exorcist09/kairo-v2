@@ -1,5 +1,5 @@
-export default function Home() {
-    return (
-        <div></div>
-    );
+import HomeSection from "@/pages/Homepage/Home";
+
+export default function Page() {
+  return <HomeSection />;
 }
