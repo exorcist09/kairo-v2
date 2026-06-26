@@ -5,6 +5,8 @@ import Image from "next/image";
 import { useState } from "react";
 
 export default function Settings() {
+  const [is2FAEnabled, setIs2FAEnabled] = useState(false);
+
   return (
     <div className="w-full h-full flex flex-col">
       <h1 className="text-2xl font-bold text-gray-900 mb-6">Settings</h1>
@@ -58,7 +60,6 @@ export default function Settings() {
                     <option value="IN">India (+91)</option>
                     <option value="US">United States (+1)</option>
                     <option value="UK">United Kingdom (+44)</option>
-                    <option value="BD">Bangladesh (+880)</option>
                   </select>
                   <CaretDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                 </div>
@@ -81,6 +82,15 @@ export default function Settings() {
             <h2 className="text-xl font-bold text-gray-900">Account Overview</h2>
             
             <div className="flex flex-col gap-4">
+              {/* Username Row */}
+              <div className="flex items-center justify-between py-4 border-b border-gray-200">
+                <div className="flex flex-col">
+                  <span className="text-sm font-semibold text-gray-900 mb-1">Username</span>
+                  <span className="text-sm text-gray-500">@johndoe</span>
+                </div>
+                <span className="text-xs font-medium text-gray-400 bg-gray-100 px-3 py-1 rounded-full">Not editable</span>
+              </div>
+
               {/* Email Row */}
               <div className="flex items-center justify-between py-4 border-b border-gray-200">
                 <div className="flex flex-col">
@@ -100,6 +110,28 @@ export default function Settings() {
                 </div>
                 <button className="text-sm font-medium text-blue-600 hover:text-blue-700 flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-blue-50 transition-colors">
                   <LockKey className="w-4 h-4" /> Change Password
+                </button>
+              </div>
+
+              {/* 2FA Row */}
+              <div className="flex items-center justify-between py-4 border-b border-gray-200">
+                <div className="flex flex-col">
+                  <span className="text-sm font-semibold text-gray-900 mb-1">Two-Factor Authentication</span>
+                  <span className="text-sm text-gray-500">Add an extra layer of security to your account</span>
+                </div>
+                
+                {/* Toggle Button */}
+                <button 
+                  onClick={() => setIs2FAEnabled(!is2FAEnabled)}
+                  className={`relative w-12 h-6 rounded-full transition-colors flex-shrink-0 ${
+                    is2FAEnabled ? 'bg-blue-600' : 'bg-gray-300'
+                  }`}
+                >
+                  <div 
+                    className={`absolute top-1 bg-white w-4 h-4 rounded-full shadow-sm transition-transform duration-200 ease-in-out ${
+                      is2FAEnabled ? 'translate-x-7 left-0' : 'translate-x-1 left-0'
+                    }`}
+                  />
                 </button>
               </div>
             </div>

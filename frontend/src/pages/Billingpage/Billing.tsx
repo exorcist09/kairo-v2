@@ -16,13 +16,15 @@ export default function Billing() {
     <div className="w-full h-full flex flex-col">
       <h1 className="text-2xl font-bold text-gray-900 mb-6 flex-shrink-0">Billing</h1>
       
-      {/* Outer Bordered Container */}
-      <div className="flex-1 border border-gray-200 rounded-2xl bg-gray-50 overflow-y-auto p-6 md:p-8 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-        
-        {/* Centered Content Wrapper */}
-        <div className="max-w-5xl mx-auto w-full flex flex-col gap-6 pb-4">
-        {/* Available Credits Card */}
-        <div className="relative overflow-hidden border border-blue-100 bg-blue-50/50 rounded-2xl p-6 md:p-8 flex items-center justify-between shadow-sm flex-shrink-0">
+      {/* Scrollable Container with border */}
+      <div className="flex-1 border border-gray-200 rounded-2xl bg-white overflow-hidden flex flex-col">
+        <div className="flex-1 overflow-y-auto no-scrollbar p-6 md:p-8 flex flex-col">
+          
+          {/* Centered Content Wrapper */}
+          <div className="max-w-5xl mx-auto w-full flex flex-col gap-8 pb-4">
+            
+            {/* Available Credits Card */}
+            <div className="relative overflow-hidden border border-blue-100 bg-blue-50/50 rounded-2xl p-6 md:p-8 flex items-center justify-between shadow-sm flex-shrink-0">
           <div className="z-10 relative">
             <h2 className="text-lg font-bold text-gray-900">Available Credits</h2>
             <div className="text-5xl font-bold text-blue-600 my-3 font-sans tracking-tight">649</div>
@@ -36,20 +38,20 @@ export default function Billing() {
           </div>
         </div>
 
-        {/* Purchase Credits Card */}
-        <div className="border border-gray-200 bg-white rounded-2xl p-6 md:p-8 shadow-sm flex-shrink-0">
-          <div className="flex items-center gap-2 mb-2">
-            <Coins weight="bold" className="w-6 h-6 text-blue-600" />
-            <h2 className="text-lg font-bold text-gray-900">Purchase Credits</h2>
-          </div>
-          <p className="text-sm text-gray-500 mb-6 font-medium">Select the number of credits you want to purchase</p>
-          
-          <div className="flex flex-col gap-3 mb-6">
-            {/* Small Pack */}
-            <div 
-              onClick={() => setSelectedPack("small")}
-              className={`flex items-center justify-between p-4 rounded-xl border cursor-pointer transition-all ${selectedPack === 'small' ? 'border-blue-200 bg-blue-50/50' : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50/50'}`}
-            >
+            {/* Purchase Credits Card */}
+            <div className="bg-gray-50 rounded-2xl border border-gray-100 p-6 md:p-8 shadow-sm flex-shrink-0">
+              <div className="flex items-center gap-2 mb-2">
+                <Coins weight="bold" className="w-6 h-6 text-blue-600" />
+                <h2 className="text-lg font-bold text-gray-900">Purchase Credits</h2>
+              </div>
+              <p className="text-sm text-gray-500 mb-6 font-medium">Select the number of credits you want to purchase</p>
+              
+              <div className="flex flex-col gap-3 mb-6">
+                {/* Small Pack */}
+                <div 
+                  onClick={() => setSelectedPack("small")}
+                  className={`flex items-center justify-between p-4 rounded-xl border cursor-pointer transition-all ${selectedPack === 'small' ? 'border-blue-200 bg-blue-50/50' : 'border-gray-200 bg-white hover:border-gray-300'}`}
+                >
               <div className="flex items-center gap-3">
                 {selectedPack === 'small' ? <CheckCircle weight="fill" className="w-5 h-5 text-blue-600" /> : <Circle weight="regular" className="w-5 h-5 text-gray-300" />}
                 <span className="font-semibold text-sm text-gray-800">Small Pack - 1,000 credits</span>
@@ -57,11 +59,11 @@ export default function Billing() {
               <span className="font-bold text-sm text-blue-600">₹799.00</span>
             </div>
 
-            {/* Medium Pack */}
-            <div 
-              onClick={() => setSelectedPack("medium")}
-              className={`flex items-center justify-between p-4 rounded-xl border cursor-pointer transition-all ${selectedPack === 'medium' ? 'border-blue-200 bg-blue-50/50' : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50/50'}`}
-            >
+                {/* Medium Pack */}
+                <div 
+                  onClick={() => setSelectedPack("medium")}
+                  className={`flex items-center justify-between p-4 rounded-xl border cursor-pointer transition-all ${selectedPack === 'medium' ? 'border-blue-200 bg-blue-50/50' : 'border-gray-200 bg-white hover:border-gray-300'}`}
+                >
               <div className="flex items-center gap-3">
                 {selectedPack === 'medium' ? <CheckCircle weight="fill" className="w-5 h-5 text-blue-600" /> : <Circle weight="regular" className="w-5 h-5 text-gray-300" />}
                 <span className="font-semibold text-sm text-gray-800">Medium Pack - 5,000 credits</span>
@@ -69,11 +71,11 @@ export default function Billing() {
               <span className="font-bold text-sm text-blue-600">₹3,199.00</span>
             </div>
 
-            {/* Large Pack */}
-            <div 
-              onClick={() => setSelectedPack("large")}
-              className={`flex items-center justify-between p-4 rounded-xl border cursor-pointer transition-all ${selectedPack === 'large' ? 'border-blue-200 bg-blue-50/50' : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50/50'}`}
-            >
+                {/* Large Pack */}
+                <div 
+                  onClick={() => setSelectedPack("large")}
+                  className={`flex items-center justify-between p-4 rounded-xl border cursor-pointer transition-all ${selectedPack === 'large' ? 'border-blue-200 bg-blue-50/50' : 'border-gray-200 bg-white hover:border-gray-300'}`}
+                >
               <div className="flex items-center gap-3">
                 {selectedPack === 'large' ? <CheckCircle weight="fill" className="w-5 h-5 text-blue-600" /> : <Circle weight="regular" className="w-5 h-5 text-gray-300" />}
                 <span className="font-semibold text-sm text-gray-800">Large Pack - 10,000 credits</span>
@@ -81,11 +83,11 @@ export default function Billing() {
               <span className="font-bold text-sm text-blue-600">₹5,599.00</span>
             </div>
 
-            {/* Custom Pack */}
-            <div 
-              onClick={() => setSelectedPack("custom")}
-              className={`flex flex-col p-4 rounded-xl border cursor-pointer transition-all ${selectedPack === 'custom' ? 'border-blue-200 bg-blue-50/50' : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50/50'}`}
-            >
+                {/* Custom Pack */}
+                <div 
+                  onClick={() => setSelectedPack("custom")}
+                  className={`flex flex-col p-4 rounded-xl border cursor-pointer transition-all ${selectedPack === 'custom' ? 'border-blue-200 bg-blue-50/50' : 'border-gray-200 bg-white hover:border-gray-300'}`}
+                >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   {selectedPack === 'custom' ? <CheckCircle weight="fill" className="w-5 h-5 text-blue-600" /> : <Circle weight="regular" className="w-5 h-5 text-gray-300" />}
@@ -112,17 +114,17 @@ export default function Billing() {
             </div>
           </div>
 
-          <button className="w-full flex items-center justify-center gap-2 bg-blue-600 text-white font-semibold py-3.5 rounded-xl hover:bg-blue-700 transition-colors shadow-sm">
-            <CreditCard weight="fill" className="w-5 h-5" />
-            Purchase credits
-          </button>
-        </div>
+              <button className="w-full flex items-center justify-center gap-2 bg-blue-600 text-white font-semibold py-3.5 rounded-xl hover:bg-blue-700 transition-colors shadow-sm">
+                <CreditCard weight="fill" className="w-5 h-5" />
+                Purchase credits
+              </button>
+            </div>
 
-        {/* Bottom Row: Consumed + History */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 flex-shrink-0">
-          
-          {/* Credits Consumed Card */}
-          <div className="border border-gray-200 bg-white rounded-2xl p-6 shadow-sm flex flex-col">
+            {/* Bottom Row: Consumed + History */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 flex-shrink-0">
+              
+              {/* Credits Consumed Card */}
+              <div className="bg-gray-50 rounded-2xl border border-gray-100 p-6 md:p-8 shadow-sm flex flex-col">
             <div className="flex items-center gap-2 mb-2">
               <ChartBar weight="bold" className="w-6 h-6 text-blue-600" />
               <h2 className="text-lg font-bold text-gray-900">Credits consumed</h2>
@@ -167,10 +169,9 @@ export default function Billing() {
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* Transaction History Card */}
-          <div className="border border-gray-200 bg-white rounded-2xl p-6 shadow-sm flex flex-col">
+            {/* Transaction History Card */}
+            <div className="bg-gray-50 rounded-2xl border border-gray-100 p-6 md:p-8 shadow-sm flex flex-col">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
                 <Receipt weight="bold" className="w-6 h-6 text-blue-600" />
@@ -181,6 +182,7 @@ export default function Billing() {
             <p className="text-sm text-gray-500 mb-6 font-medium">Recent credit purchases and usage</p>
             
             <div className="flex-1 flex flex-col gap-3 overflow-y-auto">
+            <div className="flex-1 flex flex-col gap-3">
               {[
                 { type: "Purchase", pack: "Medium Pack", amount: "+5,000", cost: "₹3,199.00", date: "Oct 24, 2026", status: "success" },
                 { type: "Usage", pack: "Data Scrape Workflow", amount: "-120", cost: "", date: "Oct 22, 2026", status: "success" },
@@ -188,7 +190,7 @@ export default function Billing() {
                 { type: "Purchase", pack: "Small Pack", amount: "+1,000", cost: "₹799.00", date: "Oct 12, 2026", status: "success" },
                 { type: "Usage", pack: "Failed Webhook", amount: "-5", cost: "", date: "Oct 10, 2026", status: "failed" },
               ].map((tx, idx) => (
-                <div key={idx} className="flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 transition-colors border border-transparent hover:border-gray-100">
+                <div key={idx} className="flex items-center justify-between p-3 rounded-xl bg-white border border-gray-200 hover:border-gray-300 transition-colors shadow-sm">
                   <div className="flex flex-col">
                     <span className="text-sm font-semibold text-gray-900">{tx.type} • {tx.pack}</span>
                     <span className="text-xs font-medium text-gray-500">{tx.date}</span>
@@ -198,12 +200,12 @@ export default function Billing() {
                     {tx.cost && <span className="text-xs font-medium text-gray-500">{tx.cost}</span>}
                     {tx.status === 'failed' && <span className="text-[10px] font-bold text-red-500 bg-red-50 px-1.5 py-0.5 mt-0.5 rounded">Failed</span>}
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
 
-        </div>
+          </div>
+          </div>
         </div>
       </div>
     </div>
