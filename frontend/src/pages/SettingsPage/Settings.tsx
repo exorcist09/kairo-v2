@@ -11,7 +11,7 @@ export default function Settings() {
       
       {/* Scrollable Container with border */}
       <div className="flex-1 border border-gray-200 rounded-2xl bg-white overflow-hidden flex flex-col">
-        <div className="flex-1 overflow-y-auto p-8 flex flex-col gap-8">
+        <div className="flex-1 overflow-y-auto no-scrollbar p-8 flex flex-col gap-8">
           
           {/* Avatar Section */}
           <div className="flex items-end gap-6">
