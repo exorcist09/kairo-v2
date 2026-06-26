@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Plus, Clock, CheckCircle, Trash, ArrowUpRight, Pen, FolderDashed } from "@phosphor-icons/react";
 import CreateWorkflowModal from "./components/CreateWorkflowModal";
 
@@ -94,9 +95,12 @@ export default function Workflows() {
                           <span className="text-xs text-gray-500">Last edited: {w.updatedAt}</span>
                         </div>
                       </div>
-                      <button className="flex items-center gap-2 text-sm font-medium text-blue-600 bg-blue-50 px-4 py-2 rounded-lg hover:bg-blue-100 transition-colors">
+                      <Link 
+                        href={`/editor/${w.id}`}
+                        className="flex items-center gap-2 text-sm font-medium text-blue-600 bg-blue-50 px-4 py-2 rounded-lg hover:bg-blue-100 transition-colors"
+                      >
                         Open Editor <ArrowUpRight weight="bold" className="w-4 h-4" />
-                      </button>
+                      </Link>
                     </div>
                   ))}
                 </div>
