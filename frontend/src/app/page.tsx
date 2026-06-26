@@ -1,7 +1,11 @@
-export default function Home() {
+"use client";
+
+import Home from "../pages/Homepage/Homepage"
+
+export default function Page() {
   return (
     <>
-    Kairo Home
+    <Home/>
     </>
   );
 }
