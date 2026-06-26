@@ -169,45 +169,46 @@ export default function Billing() {
                 </div>
               </div>
             </div>
+          </div>
 
             {/* Transaction History Card */}
             <div className="bg-gray-50 rounded-2xl border border-gray-100 p-6 md:p-8 shadow-sm flex flex-col">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <Receipt weight="bold" className="w-6 h-6 text-blue-600" />
-                <h2 className="text-lg font-bold text-gray-900">Transaction History</h2>
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <Receipt weight="bold" className="w-6 h-6 text-blue-600" />
+                  <h2 className="text-lg font-bold text-gray-900">Transaction History</h2>
+                </div>
+                <button className="text-sm font-semibold text-blue-600 hover:text-blue-700">View all</button>
               </div>
-              <button className="text-sm font-semibold text-blue-600 hover:text-blue-700">View all</button>
-            </div>
-            <p className="text-sm text-gray-500 mb-6 font-medium">Recent credit purchases and usage</p>
-            
-            <div className="flex-1 flex flex-col gap-3 overflow-y-auto">
-            <div className="flex-1 flex flex-col gap-3">
-              {[
-                { type: "Purchase", pack: "Medium Pack", amount: "+5,000", cost: "₹3,199.00", date: "Oct 24, 2026", status: "success" },
-                { type: "Usage", pack: "Data Scrape Workflow", amount: "-120", cost: "", date: "Oct 22, 2026", status: "success" },
-                { type: "Usage", pack: "Email Campaign", amount: "-450", cost: "", date: "Oct 18, 2026", status: "success" },
-                { type: "Purchase", pack: "Small Pack", amount: "+1,000", cost: "₹799.00", date: "Oct 12, 2026", status: "success" },
-                { type: "Usage", pack: "Failed Webhook", amount: "-5", cost: "", date: "Oct 10, 2026", status: "failed" },
-              ].map((tx, idx) => (
-                <div key={idx} className="flex items-center justify-between p-3 rounded-xl bg-white border border-gray-200 hover:border-gray-300 transition-colors shadow-sm">
-                  <div className="flex flex-col">
-                    <span className="text-sm font-semibold text-gray-900">{tx.type} • {tx.pack}</span>
-                    <span className="text-xs font-medium text-gray-500">{tx.date}</span>
-                  </div>
-                  <div className="flex flex-col items-end">
-                    <span className={`text-sm font-bold ${tx.amount.startsWith('+') ? 'text-green-600' : 'text-gray-900'}`}>{tx.amount}</span>
-                    {tx.cost && <span className="text-xs font-medium text-gray-500">{tx.cost}</span>}
-                    {tx.status === 'failed' && <span className="text-[10px] font-bold text-red-500 bg-red-50 px-1.5 py-0.5 mt-0.5 rounded">Failed</span>}
+              <p className="text-sm text-gray-500 mb-6 font-medium">Recent credit purchases and usage</p>
+              
+              <div className="flex-1 flex flex-col gap-3 overflow-y-auto">
+                {[
+                  { type: "Purchase", pack: "Medium Pack", amount: "+5,000", cost: "₹3,199.00", date: "Oct 24, 2026", status: "success" },
+                  { type: "Usage", pack: "Data Scrape Workflow", amount: "-120", cost: "", date: "Oct 22, 2026", status: "success" },
+                  { type: "Usage", pack: "Email Campaign", amount: "-450", cost: "", date: "Oct 18, 2026", status: "success" },
+                  { type: "Purchase", pack: "Small Pack", amount: "+1,000", cost: "₹799.00", date: "Oct 12, 2026", status: "success" },
+                  { type: "Usage", pack: "Failed Webhook", amount: "-5", cost: "", date: "Oct 10, 2026", status: "failed" },
+                ].map((tx, idx) => (
+                  <div key={idx} className="flex items-center justify-between p-3 rounded-xl bg-white border border-gray-200 hover:border-gray-300 transition-colors shadow-sm">
+                    <div className="flex flex-col">
+                      <span className="text-sm font-semibold text-gray-900">{tx.type} • {tx.pack}</span>
+                      <span className="text-xs font-medium text-gray-500">{tx.date}</span>
+                    </div>
+                    <div className="flex flex-col items-end">
+                      <span className={`text-sm font-bold ${tx.amount.startsWith('+') ? 'text-green-600' : 'text-gray-900'}`}>{tx.amount}</span>
+                      {tx.cost && <span className="text-xs font-medium text-gray-500">{tx.cost}</span>}
+                      {tx.status === 'failed' && <span className="text-[10px] font-bold text-red-500 bg-red-50 px-1.5 py-0.5 mt-0.5 rounded">Failed</span>}
+                    </div>
                   </div>
                 ))}
               </div>
             </div>
-
-          </div>
+            
           </div>
         </div>
       </div>
     </div>
+  </div>
   );
 }
