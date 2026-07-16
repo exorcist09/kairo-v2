@@ -27,6 +27,7 @@
     "@prisma/client": "^7.8.0",
     "@types/passport-google-oauth20": "^2.0.17",
     "arctic": "^3.7.0",
+    "bcrypt": "^6.0.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
