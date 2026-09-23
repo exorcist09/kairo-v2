@@ -117,7 +117,7 @@ export default function Settings() {
                   <span className="text-sm font-semibold text-gray-900 mb-1">Username</span>
                   <span className="text-sm text-gray-500 font-mono">@johndoe</span>
                 </div>
-                <span className="text-xs font-medium text-amber-800 bg-amber-50 border border-amber-200/60 px-3 py-1 rounded-full">
+                <span className="text-xs font-medium text-gray-500 bg-gray-100 text-gray-800 border-gray-200 px-3 py-1 rounded-full">
                   Non-editable
                 </span>
               </div>

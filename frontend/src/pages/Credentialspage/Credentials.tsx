@@ -22,11 +22,11 @@ interface CredentialItem {
 }
 
 const POPULAR_PROVIDERS = [
-  { name: "OpenAI", type: "API Key", color: "bg-emerald-50 text-emerald-700 border-emerald-200" },
-  { name: "Stripe", type: "Secret Key", color: "bg-indigo-50 text-indigo-700 border-indigo-200" },
+  { name: "OpenAI", type: "API Key", color: "bg-gray-100 text-gray-800 border-gray-200"},
+  { name: "Stripe", type: "Secret Key", color: "bg-gray-100 text-gray-800 border-gray-200" },
   { name: "GitHub", type: "Personal Access Token", color: "bg-gray-100 text-gray-800 border-gray-200" },
-  { name: "Slack", type: "Bot Token", color: "bg-amber-50 text-amber-800 border-amber-200" },
-  { name: "PostgreSQL", type: "Database URI", color: "bg-blue-50 text-blue-700 border-blue-200" },
+  { name: "Slack", type: "Bot Token", color: "bg-gray-100 text-gray-800 border-gray-200"},
+  { name: "PostgreSQL", type: "Database URI", color: "bg-gray-100 text-gray-800 border-gray-200" },
 ];
 
 export default function Credentials() {
@@ -88,11 +88,8 @@ export default function Credentials() {
           <div className="flex-1 flex flex-col items-center justify-center p-8 sm:p-12 text-center max-w-lg mx-auto">
             {/* Visual Icon Badge */}
             <div className="relative mb-6">
-              <div className="w-20 h-20 rounded-3xl bg-blue-50/80 border border-blue-100 flex items-center justify-center text-blue-600 shadow-xs">
+              <div className="w-20 h-20 rounded-3xl bg-blue-50/60 border border-blue-100 flex items-center justify-center text-blue-600 shadow-xs">
                 <Key weight="duotone" className="w-10 h-10" />
-              </div>
-              <div className="absolute -bottom-1.5 -right-1.5 w-7 h-7 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-sm border-2 border-white">
-                <ShieldCheck weight="bold" className="w-4 h-4" />
               </div>
             </div>
 

@@ -179,7 +179,7 @@ export default function Workflows() {
       <div className="flex-1 border border-gray-200 rounded-2xl bg-white overflow-hidden flex flex-col">
         {/* Filter Navigation Tabs with Smooth Sliding Pill */}
         <div className="border-b border-gray-200 px-6 py-3 flex items-center justify-between bg-gray-50/50 flex-shrink-0">
-          <div className="relative flex items-center p-1 bg-gray-200/60 rounded-xl border border-gray-200/70">
+          <div className="relative flex items-center p-1 bg-gray-200/50 rounded-xl border border-gray-200/70">
             {/* Smooth Sliding Pill Indicator */}
             {indicatorStyle.width > 0 && (
               <div
@@ -294,7 +294,7 @@ export default function Workflows() {
                       {!isCompleted && (
                         <Link
                           href={`/editor/${w.id}`}
-                          className="flex items-center gap-1.5 text-xs font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 border border-blue-100 px-3.5 py-2 rounded-lg transition-colors cursor-pointer"
+                          className="flex items-center gap-1.5 text-xs font-semibold text-blue-600 bg-blue-50/50 hover:bg-blue-100 border border-blue-100 px-3.5 py-2 rounded-lg transition-colors cursor-pointer"
                         >
                           <span>Open Editor</span>
                           <ArrowUpRight weight="bold" className="w-3.5 h-3.5" />

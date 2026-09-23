@@ -19,23 +19,26 @@ import CreateWorkflowModal from "../Workflowpage/components/CreateWorkflowModal"
 
 const ANALYTICS_DATA: Record<
   string,
-  { points: string; labels: string[]; total: string; successRate: string }
+  { points: string; labels: string[]; yAxis: string[]; total: string; successRate: string }
 > = {
   Today: {
-    points: "0,75 15,70 30,55 45,60 60,35 75,40 90,20 100,15",
+    points: "0,88 15,82 30,55 45,15 60,28 75,20 90,52 100,32",
     labels: ["00:00", "04:00", "08:00", "12:00", "16:00", "20:00", "Now"],
+    yAxis: ["500", "350", "200", "50", "0"],
     total: "348",
     successRate: "99.1%",
   },
   "7 Days": {
-    points: "0,80 15,65 30,58 45,35 60,42 75,25 90,30 100,18",
+    points: "0,35 16,22 33,18 50,25 66,28 83,78 100,82",
     labels: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+    yAxis: ["2.0k", "1.5k", "1.0k", "500", "0"],
     total: "1,284",
     successRate: "99.4%",
   },
   "30 Days": {
-    points: "0,85 15,75 30,60 45,50 60,45 75,30 90,25 100,12",
-    labels: ["Week 1", "Week 2", "Week 3", "Week 4"],
+    points: "0,92 12,85 25,72 38,62 50,48 63,40 75,26 88,18 100,8",
+    labels: ["Day 1", "Day 8", "Day 15", "Day 22", "Day 30"],
+    yAxis: ["8k", "6k", "4k", "2k", "0"],
     total: "5,412",
     successRate: "98.9%",
   },
@@ -207,22 +210,33 @@ export default function Home() {
                   Execution Analytics
                 </h3>
 
-                {/* Period Filter Tabs */}
-                <div className="flex items-center p-1 bg-gray-100 rounded-xl border border-gray-200/60 self-start sm:self-auto">
-                  {(["Today", "7 Days", "30 Days"] as const).map((filter) => (
-                    <button
-                      key={filter}
-                      type="button"
-                      onClick={() => setTimeFilter(filter)}
-                      className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
-                        timeFilter === filter
-                          ? "bg-white text-blue-600 shadow-xs font-bold"
-                          : "text-gray-600 hover:text-gray-900"
-                      }`}
-                    >
-                      {filter}
-                    </button>
-                  ))}
+                {/* Period Filter Tabs: Today | 7 Day | 30 Day */}
+                <div className="flex items-center p-1 select-none">
+                  {[
+                    { id: "Today", label: "Today" },
+                    { id: "7 Days", label: "7 Day" },
+                    { id: "30 Days", label: "30 Day" },
+                  ].map((tab, idx, arr) => {
+                    const isActive = timeFilter === tab.id;
+                    return (
+                      <div key={tab.id} className="flex items-center">
+                        <button
+                          type="button"
+                          onClick={() => setTimeFilter(tab.id as "Today" | "7 Days" | "30 Days")}
+                          className={`px-3 py-1.5 text-xs font-semibold rounded-lg  cursor-pointer ${
+                            isActive
+                              ? "bg-blue-50 text-blue-600 shadow-2xs font-bold border border-blue-200/80"
+                              : "text-gray-500 hover:text-gray-900 hover:bg-gray-50"
+                          }`}
+                        >
+                          {tab.label}
+                        </button>
+                        {idx < arr.length - 1 && (
+                          <span className="text-gray-300 text-xs px-1 select-none pointer-events-none">|</span>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -230,15 +244,14 @@ export default function Home() {
               <div className="z-10 relative h-60 w-full flex items-end pt-4">
                 {/* Y-axis labels */}
                 <div className="absolute left-0 top-0 bottom-6 flex flex-col justify-between text-xs font-medium text-gray-400 w-8 select-none">
-                  <span>1.5k</span>
-                  <span>1.0k</span>
-                  <span>500</span>
-                  <span>0</span>
+                  {currentAnalytics.yAxis.map((val, idx) => (
+                    <span key={idx}>{val}</span>
+                  ))}
                 </div>
 
                 {/* Horizontal Grid lines */}
                 <div className="absolute left-10 right-0 top-2 bottom-6 flex flex-col justify-between pointer-events-none">
-                  {[1, 2, 3, 4].map((i) => (
+                  {currentAnalytics.yAxis.slice(0, -1).map((_, i) => (
                     <div key={i} className="w-full border-b border-gray-100 border-dashed" />
                   ))}
                 </div>

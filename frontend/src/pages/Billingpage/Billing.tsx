@@ -29,7 +29,7 @@ export default function Billing() {
           <div className="max-w-5xl mx-auto w-full flex flex-col gap-8 pb-4">
             
             {/* Available Credits Card */}
-            <div className="relative overflow-hidden border border-blue-100 bg-blue-50/50 rounded-2xl p-6 md:p-8 flex items-center justify-between shadow-sm flex-shrink-0">
+            <div className="relative overflow-hidden border border-blue-100  rounded-2xl p-6 md:p-8 flex items-center justify-between shadow-sm flex-shrink-0">
           <div className="z-10 relative">
             <h2 className="text-lg font-bold text-gray-900">Available Credits</h2>
             <div className="text-5xl font-bold text-blue-600 my-3 font-sans tracking-tight">649</div>
@@ -44,7 +44,7 @@ export default function Billing() {
         </div>
 
             {/* Purchase Credits Card */}
-            <div className="bg-gray-50 rounded-2xl border border-gray-100 p-6 md:p-8 shadow-sm flex-shrink-0">
+            <div className="rounded-2xl border border-gray-100 p-6 md:p-8 shadow-sm flex-shrink-0">
               <div className="flex items-center gap-2 mb-2">
                 <Coins weight="bold" className="w-6 h-6 text-blue-600" />
                 <h2 className="text-lg font-bold text-gray-900">Purchase Credits</h2>
@@ -129,7 +129,7 @@ export default function Billing() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 flex-shrink-0">
               
               {/* Credits Consumed Card */}
-              <div className="bg-gray-50 rounded-2xl border border-gray-100 p-6 md:p-8 shadow-sm flex flex-col">
+              <div className=" rounded-2xl border border-gray-100 p-6 md:p-8 shadow-sm flex flex-col">
             <div className="flex items-center gap-2 mb-2">
               <ChartBar weight="bold" className="w-6 h-6 text-blue-600" />
               <h2 className="text-lg font-bold text-gray-900">Credits consumed</h2>
@@ -177,7 +177,7 @@ export default function Billing() {
           </div>
 
             {/* Transaction History Card */}
-            <div className="bg-gray-50 rounded-2xl border border-gray-100 p-6 md:p-8 shadow-sm flex flex-col">
+            <div className="rounded-2xl border border-gray-100 p-6 md:p-8 shadow-sm flex flex-col">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
                   <Receipt weight="bold" className="w-6 h-6 text-blue-600" />
