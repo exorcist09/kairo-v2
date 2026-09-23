@@ -3,8 +3,7 @@ import bcrypt from "bcrypt";
 import { prisma } from "../lib/prisma";
 import jwt, { type JwtPayload } from "jsonwebtoken";
 import dotenv from "dotenv";
-import { sendEmail } from "../services/mail.service";
-import { generateOTP, getOtpHTML } from "../utils/otp";
+
 
 dotenv.config();
 
@@ -98,24 +97,6 @@ export const login = async (req: Request, res: Response) => {
     maxAge: 7 * 24 * 60 * 60 * 1000, //7days
   });
 
-  const otp = generateOTP();
-  const otpHTML = getOtpHTML(otp);
-
-  const OTPHash = await bcrypt.hash(otp, 10);
-  await prisma.otp.create({
-    data: {
-      email,
-      otpHash: OTPHash,
-    },
-  });
-
-  await sendEmail({
-    to: email,
-    subject: "OTP Verification",
-    text: `Your OTP code is ${otp}`,
-    html: otpHTML,
-  });
-
   return res.status(200).json({
     message: "Login Successful",
     user: {
@@ -174,59 +155,61 @@ export const refreshToken = async (req: Request, res: Response) => {
 
 export const logout = async (req: Request, res: Response) => {};
 
-export const verifyEmail = async (req: Request, res: Response) => {
-  const { email, otp } = req.body;
 
-  if (!email || !otp) {
-    return res.status(400).json({
-      message: "Email and OTP are required",
-    });
-  }
+// 2step factor authentication
+// export const verifyEmail = async (req: Request, res: Response) => {
+//   const { email, otp } = req.body;
 
-  const otpRecord = await prisma.otp.findUnique({
-    where: {
-      email,
-    },
-  });
+//   if (!email || !otp) {
+//     return res.status(400).json({
+//       message: "Email and OTP are required",
+//     });
+//   }
 
-  if (!otpRecord) {
-    return res.status(400).json({
-      message: "Invalid OTP",
-    });
-  }
+//   const otpRecord = await prisma.otp.findUnique({
+//     where: {
+//       email,
+//     },
+//   });
 
-  // compare otp
-  const isOtpValid = await bcrypt.compare(otp, otpRecord.otpHash);
+//   if (!otpRecord) {
+//     return res.status(400).json({
+//       message: "Invalid OTP",
+//     });
+//   }
 
-  if (!isOtpValid) {
-    return res.status(400).json({
-      message: "Invalid or expired OTP",
-    });
-  }
+//   // compare otp
+//   const isOtpValid = await bcrypt.compare(otp, otpRecord.otpHash);
 
-  // verify user
-  const user = await prisma.user.update({
-    where: {
-      email,
-    },
-    data: {
-      verified: true,
-    },
-  });
+//   if (!isOtpValid) {
+//     return res.status(400).json({
+//       message: "Invalid or expired OTP",
+//     });
+//   }
 
-  // delete Opt record of that user in the OTP table
-  await prisma.otp.delete({
-    where: {
-      email,
-    },
-  });
+//   // verify user
+//   const user = await prisma.user.update({
+//     where: {
+//       email,
+//     },
+//     data: {
+//       verified: true,
+//     },
+//   });
 
-  return res.status(200).json({
-    message: "Email verified Successfully",
-    user: {
-      username: user.username,
-      email: user.email,
-      verified: user.verified,
-    },
-  });
-};
+//   // delete Opt record of that user in the OTP table
+//   await prisma.otp.delete({
+//     where: {
+//       email,
+//     },
+//   });
+
+//   return res.status(200).json({
+//     message: "Email verified Successfully",
+//     user: {
+//       username: user.username,
+//       email: user.email,
+//       verified: user.verified,
+//     },
+//   });
+// };
