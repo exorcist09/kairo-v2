@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   Coins,
   ChartBar,
@@ -64,6 +65,7 @@ const PRESET_PACKS: CreditPack[] = [
 ];
 
 export default function Billing() {
+  const router = useRouter();
   const [selectedPack, setSelectedPack] = useState("medium");
   const [customCredits, setCustomCredits] = useState<number | "">("");
 
@@ -303,6 +305,7 @@ export default function Billing() {
               <div className="z-10 relative pt-1">
                 <button
                   type="button"
+                  onClick={() => router.push("/payment")}
                   disabled={!summary.isValid || summary.credits <= 0}
                   className="w-full flex items-center justify-center gap-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold py-3.5 px-6 rounded-xl transition-all shadow-xs cursor-pointer text-sm"
                 >
