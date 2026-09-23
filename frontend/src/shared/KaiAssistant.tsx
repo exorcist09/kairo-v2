@@ -23,8 +23,8 @@ const INITIAL_MESSAGES: Message[] = [
   {
     id: "m-1",
     sender: "kai",
-    text: "Hi John! I'm Kai, your Kairo assistant. Need help building a workflow, testing credentials, or analyzing executions?",
-    time: "Just now",
+    text: "Hi! I'm Kai, your Kairo assistant. Need help building a workflow, testing credentials, or analyzing executions?",
+    time: "",
   },
 ];
 
@@ -35,66 +35,17 @@ const SUGGESTIONS = [
   { text: "Optimize execution latency", icon: Lightning },
 ];
 
-// Modern Multi-orbital Quantum AI Emblem for Kai
-function KaiLogo({ className = "w-full h-full", idPrefix = "kai" }: { className?: string; idPrefix?: string }) {
+// Isometric Hexagonal Loop Emblem for Kai (White on Black)
+function KaiLogo({ className = "w-full h-full" }: { className?: string; idPrefix?: string }) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" className={className}>
-      <defs>
-        <linearGradient id={`${idPrefix}-grad1`} x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#38bdf8" />
-          <stop offset="50%" stopColor="#818cf8" />
-          <stop offset="100%" stopColor="#c084fc" />
-        </linearGradient>
-        <linearGradient id={`${idPrefix}-grad2`} x1="100%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" stopColor="#f472b6" />
-          <stop offset="50%" stopColor="#a855f7" />
-          <stop offset="100%" stopColor="#38bdf8" />
-        </linearGradient>
-      </defs>
-      {/* Outer Concentric Boundary Circle */}
-      <circle
-        cx="12"
-        cy="12"
-        r="10.5"
-        stroke={`url(#${idPrefix}-grad1)`}
-        strokeWidth="1.2"
-        strokeDasharray="2 2"
-        strokeOpacity="0.45"
+    <svg viewBox="0 0 100 100" fill="none" className={className}>
+      {/* Outer Hexagon with Inner Parallelogram Cutout */}
+      <path
+        fillRule="evenodd"
+        clipRule="evenodd"
+        d="M 44.5 11.2 Q 50 8 55.5 11.2 L 82.5 26.8 Q 88 30 88 36 L 88 64 Q 88 70 82.5 73.2 L 55.5 88.8 Q 50 92 44.5 88.8 L 17.5 73.2 Q 12 70 12 64 L 12 36 Q 12 30 17.5 26.8 Z M 51.8 32.3 Q 56 30 60.2 32.4 L 82.5 45.0 Q 86 47 81.5 49.5 L 48.2 67.7 Q 44 70 39.8 67.6 L 17.5 55.0 Q 14 53 18.5 50.5 Z"
+        fill="white"
       />
-      {/* 3 Intersecting Quantum Intelligence Orbital Rings */}
-      <ellipse
-        cx="12"
-        cy="12"
-        rx="8.8"
-        ry="3.6"
-        transform="rotate(-30 12 12)"
-        stroke={`url(#${idPrefix}-grad1)`}
-        strokeWidth="1.8"
-        strokeLinecap="round"
-      />
-      <ellipse
-        cx="12"
-        cy="12"
-        rx="8.8"
-        ry="3.6"
-        transform="rotate(30 12 12)"
-        stroke={`url(#${idPrefix}-grad2)`}
-        strokeWidth="1.8"
-        strokeLinecap="round"
-      />
-      <ellipse
-        cx="12"
-        cy="12"
-        rx="8.8"
-        ry="3.6"
-        transform="rotate(90 12 12)"
-        stroke={`url(#${idPrefix}-grad1)`}
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        strokeOpacity="0.8"
-      />
-      {/* Inner Radiant Core Node */}
-      <circle cx="12" cy="12" r="2.2" fill="white" className="drop-shadow-xs" />
     </svg>
   );
 }
@@ -185,15 +136,15 @@ export default function KaiAssistant() {
         {/* Chatbox Popover */}
         {isOpen && (
           <div
-            className={`pointer-events-auto absolute bottom-18 mb-2 w-[calc(100vw-2rem)] sm:w-[400px] h-[480px] max-h-[75vh] bg-white rounded-2xl shadow-2xl border border-gray-200/90 flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 ${
+            className={`pointer-events-auto absolute bottom-18 mb-2 w-[calc(100vw-2rem)] sm:w-[600px] h-[480px] max-h-[75vh] bg-white rounded-2xl shadow-2xl border border-gray-200/90 flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 ${
               isHomePage ? "-translate-x-1/2 left-1/2" : "right-0"
             }`}
           >
             {/* Header */}
-            <div className="px-4 py-3.5 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white flex-shrink-0">
+            <div className="px-4 py-3.5 border-b border-gray-100 flex items-center justify-between bg-black/90 to-slate-900 text-white flex-shrink-0">
               <div className="flex items-center gap-2.5">
                 {/* Header Icon */}
-                <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center p-1 shadow-inner">
+                <div className="w-8 h-8 rounded-full  flex items-center justify-center p-1 shadow-inner">
                   <KaiLogo idPrefix="header" />
                 </div>
 
@@ -202,7 +153,7 @@ export default function KaiAssistant() {
                     <span className="font-bold text-sm tracking-tight text-white">Kai</span>
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                   </div>
-                  <span className="text-[10px] text-gray-300 font-medium">Kairo Intelligence</span>
+                  {/* <span className="text-[10px] text-gray-300 font-medium">Kairo Intelligence</span> */}
                 </div>
               </div>
 
@@ -305,27 +256,28 @@ export default function KaiAssistant() {
 
         {/* Kai Trigger Circle Button with Single Black Concentric Circle & Surrounding Fogged Backdrop */}
         <div className="relative group pointer-events-auto flex items-center justify-center">
+          
           {/* Fogged Backdrop in radius around the outer concentric circle */}
           <div className="absolute -inset-4.5 rounded-full bg-white/60 backdrop-blur-md pointer-events-none transition-all duration-300 group-hover:scale-105 shadow-[0_0_18px_rgba(255,255,255,0.95)]" />
 
           {/* Single Black Concentric Circle */}
-          <div className="absolute -inset-1.5 rounded-full border border-black pointer-events-none transition-all duration-300 group-hover:scale-105 group-hover:border-black/70" />
+          <div className="absolute -inset-1 rounded-full border border-black pointer-events-none transition-all duration-300 group-hover:scale-105 group-hover:border-black/70" />
 
           {/* Subtle Ambient Pulsing Glow behind Kai */}
-          <div className="absolute -inset-1 rounded-full bg-gradient-to-r from-cyan-400 via-indigo-500 to-fuchsia-500 opacity-65 blur-md group-hover:opacity-95 transition-opacity animate-pulse pointer-events-none" />
+          <div className="absolute -inset-1 rounded-full bg-gradient-to-r from-cyan-400 via-indigo-400 to-fuchsia-400 opacity-65 blur-md group-hover:opacity-95 transition-opacity animate-pulse pointer-events-none" />
 
           {/* Circular Button: scales smoothly without rotation */}
           <button
             type="button"
             onClick={() => setIsOpen(!isOpen)}
             aria-label="Open Kai AI Assistant"
-            className="relative w-14 h-14 rounded-full bg-gradient-to-b from-slate-900 to-black text-white shadow-xl flex items-center justify-center p-2.5 border border-white/20 transition-transform duration-200 group-hover:scale-105 active:scale-95 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
+            className="relative w-14 h-14 rounded-full bg-black text-white shadow-xl flex items-center justify-center p-2.5 border border-white/20 transition-transform duration-200 group-hover:scale-105 active:scale-95 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
           >
             {/* Quantum AI Orbital Logo */}
             <KaiLogo idPrefix="button" />
 
             {/* Label badge */}
-            <div className="absolute -top-1.5 -right-1.5 bg-blue-600 text-[10px] font-bold text-white px-1.5 py-0.2 rounded-full border border-white shadow-xs">
+            <div className="absolute -top-1.5 -right-1.5 bg-blue-600 text-[10px] font-bold text-white px-1.5 py-0.2 rounded-full  border-white shadow-xs">
               Kai
             </div>
           </button>
