@@ -51,6 +51,16 @@ function KaiLogo({ className = "w-full h-full", idPrefix = "kai" }: { className?
           <stop offset="100%" stopColor="#38bdf8" />
         </linearGradient>
       </defs>
+      {/* Outer Concentric Boundary Circle */}
+      <circle
+        cx="12"
+        cy="12"
+        r="10.5"
+        stroke={`url(#${idPrefix}-grad1)`}
+        strokeWidth="1.2"
+        strokeDasharray="2 2"
+        strokeOpacity="0.45"
+      />
       {/* 3 Intersecting Quantum Intelligence Orbital Rings */}
       <ellipse
         cx="12"
@@ -293,10 +303,16 @@ export default function KaiAssistant() {
           </div>
         )}
 
-        {/* Kai Trigger Circle Button with Ambient Glow (Smooth scale only, no rotation) */}
-        <div className="relative group pointer-events-auto">
+        {/* Kai Trigger Circle Button with Single Black Concentric Circle & Surrounding Fogged Backdrop */}
+        <div className="relative group pointer-events-auto flex items-center justify-center">
+          {/* Fogged Backdrop in radius around the outer concentric circle */}
+          <div className="absolute -inset-4.5 rounded-full bg-white/60 backdrop-blur-md pointer-events-none transition-all duration-300 group-hover:scale-105 shadow-[0_0_18px_rgba(255,255,255,0.95)]" />
+
+          {/* Single Black Concentric Circle */}
+          <div className="absolute -inset-1.5 rounded-full border border-black pointer-events-none transition-all duration-300 group-hover:scale-105 group-hover:border-black/70" />
+
           {/* Subtle Ambient Pulsing Glow behind Kai */}
-          <div className="absolute -inset-1.5 rounded-full bg-gradient-to-r from-cyan-400 via-indigo-500 to-fuchsia-500 opacity-70 blur-md group-hover:opacity-100 transition-opacity animate-pulse pointer-events-none" />
+          <div className="absolute -inset-1 rounded-full bg-gradient-to-r from-cyan-400 via-indigo-500 to-fuchsia-500 opacity-65 blur-md group-hover:opacity-95 transition-opacity animate-pulse pointer-events-none" />
 
           {/* Circular Button: scales smoothly without rotation */}
           <button

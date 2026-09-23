@@ -7,15 +7,19 @@ interface CreateWorkflowModalProps {
   isOpen: boolean;
   onClose: () => void;
   onCreate: (name: string, description: string) => void;
+  initialName?: string;
+  initialDescription?: string;
 }
 
 export default function CreateWorkflowModal({
   isOpen,
   onClose,
   onCreate,
+  initialName = "",
+  initialDescription = "",
 }: CreateWorkflowModalProps) {
-  const [newName, setNewName] = useState("");
-  const [newDesc, setNewDesc] = useState("");
+  const [newName, setNewName] = useState(initialName);
+  const [newDesc, setNewDesc] = useState(initialDescription);
 
   if (!isOpen) return null;
 
