@@ -14,7 +14,12 @@ export default function Billing() {
 
   return (
     <div className="w-full h-full flex flex-col">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6 flex-shrink-0">Billing</h1>
+      <div className="mb-6 flex-shrink-0">
+        <h1 className="text-2xl font-bold text-gray-900">Billing</h1>
+        <p className="text-xs text-gray-500 mt-0.5">
+          Manage your account credits, plan usage, and payment history.
+        </p>
+      </div>
       
       {/* Scrollable Container with border */}
       <div className="flex-1 border border-gray-200 rounded-2xl bg-white overflow-hidden flex flex-col">
