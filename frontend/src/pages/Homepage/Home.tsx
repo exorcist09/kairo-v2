@@ -15,6 +15,7 @@ import {
   Warning,
 } from "@phosphor-icons/react";
 import CreateWorkflowModal from "../Workflowpage/components/CreateWorkflowModal";
+import Link from "next/link";
 
 export default function Home() {
   const [timeFilter, setTimeFilter] = useState("7 Days");
@@ -29,18 +30,20 @@ export default function Home() {
         <div className="flex items-center gap-4">
           {/* Quick Actions (Circular) */}
           <div className="flex items-center gap-2">
-            <button
+            <Link
+              href="/credentials"
               className="w-9 h-9 rounded-full bg-white border border-gray-200 flex items-center justify-center text-gray-600 hover:text-gray-900 hover:border-gray-300 hover:shadow-sm transition-all"
               title="Connect an App"
             >
               <Lightning className="w-4 h-4" />
-            </button>
-            <button
+            </Link>
+            <Link
+              href="/workflows"
               className="w-9 h-9 rounded-full bg-white border border-gray-200 flex items-center justify-center text-gray-600 hover:text-gray-900 hover:border-gray-300 hover:shadow-sm transition-all"
               title="View Executions"
             >
               <Eye className="w-4 h-4" />
-            </button>
+            </Link>
           </div>
 
           <button

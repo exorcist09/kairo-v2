@@ -71,7 +71,7 @@ export default function Workflows() {
             className="flex items-center gap-2 bg-blue-600 text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors shadow-sm"
           >
             <Plus weight="bold" className="w-4 h-4" />
-            Add New Workflow
+            New Workflow
           </button>
         </div>
       </div>
