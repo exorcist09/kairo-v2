@@ -25,11 +25,13 @@ export const profileController = async (req: Request, res: Response) => {
     return res.status(200).json({
       message: "User retrieved successfully",
       user: {
-        id: result.user.id,
-        avatar: result.user.avatar,
-        email: result.user.email,
-        username: result.user.username,
-        name: result.user.name,
+        id: result.id,
+        avatar: result.avatar,
+        email: result.email,
+        username: result.username,
+        name: result.name,
+        phone: result.phone,
+        country: result.country
       },
     });
   } catch (error) {

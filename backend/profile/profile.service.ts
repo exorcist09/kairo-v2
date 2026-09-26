@@ -1,7 +1,7 @@
 import { prisma } from "../lib/prisma";
 
 
-export const profile = async (userId: String) => {
+export const profile = async (userId: string) => {
     const user = await prisma.user.findUnique({
         where: { id: userId }
     })
