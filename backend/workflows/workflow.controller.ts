@@ -21,11 +21,28 @@ export const getAllWorkflowsController = async (
 ) => {
   try {
     const userId = getUserId(req);
-    const workflows = await workflowService.getAll(userId);
 
-    return res.status(200).json({
-      workflows,
-    });
+    const page = Math.max(Number(req.query.page) || 1, 1);
+
+    const limit = Math.min(Math.max(Number(req.query.limit) || 10, 1), 100);
+
+    const status =
+      typeof req.query.status === "string" ? req.query.status : undefined;
+
+    const search =
+      typeof req.query.search === "string"
+        ? req.query.search.trim()
+        : undefined;
+
+    const result = await workflowService.getAll(
+      userId,
+      page,
+      limit,
+      status,
+      search,
+    );
+
+    return res.status(200).json(result);
   } catch (error) {
     return res.status(400).json({
       message:

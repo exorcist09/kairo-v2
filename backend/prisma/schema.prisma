@@ -27,6 +27,7 @@ enum WorkflowStatus {
   DRAFT
   ONGOING
   COMPLETED
+  FAILED
 }
 
 model workflow {
