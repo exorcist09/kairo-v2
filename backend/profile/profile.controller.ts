@@ -1,12 +1,12 @@
-import { prisma } from "../lib/prisma";
 import type { Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
+import * as profileService from "./profile.service"
 
 dotenv.config();
 
 
-export const profile = async (req: Request, res: Response) => {
+export const profileController = async (req: Request, res: Response) => {
   try {
     const token = req.headers.authorization?.split(" ")[1];
 
@@ -20,25 +20,16 @@ export const profile = async (req: Request, res: Response) => {
       id: string;
     };
 
-    const user = await prisma.user.findUnique({
-      where: {
-        id: decoded.id,
-      },
-    });
-
-    if (!user) {
-      return res.status(404).json({
-        message: "User not found",
-      });
-    }
+    const result = await profileService.profile(decoded.id)
 
     return res.status(200).json({
       message: "User retrieved successfully",
       user: {
-        id: user.id,
-        email: user.email,
-        username: user.username,
-        name: user.name,
+        id: result.user.id,
+        avatar: result.user.avatar,
+        email: result.user.email,
+        username: result.user.username,
+        name: result.user.name,
       },
     });
   } catch (error) {
