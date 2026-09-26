@@ -10,14 +10,34 @@ datasource db {
 }
 
 model user {
-  id        String   @id @default(uuid())
+  id        String     @id @default(uuid())
   avatar    String
-  username  String   @unique
-  email     String   @unique
+  username  String     @unique
+  email     String     @unique
   name      String?
   password  String
   phone     String
   country   String
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  workflows workflow[]
+}
+
+enum WorkflowStatus {
+  DRAFT
+  ONGOING
+  COMPLETED
+}
+
+model workflow {
+  id                  String         @id @default(uuid())
+  workflowName        String
+  workflowDescription String?
+  workflowStatus      WorkflowStatus @default(DRAFT)
+
+  userId String
+  user   user   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }

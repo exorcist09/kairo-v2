@@ -3,6 +3,7 @@ import morgan from "morgan";
 import authRouter from "./auth/auth.route";
 import profileRouter from "./profile/profile.route";
 import cookieParser from "cookie-parser";
+import workflowRouter from "./workflows/workflow.route";
 
 const app = express();
 
@@ -21,5 +22,7 @@ app.get("/health", (req, res) => {
 app.use("/api/auth", authRouter);
 
 app.use("/api", profileRouter);
+
+app.use("/workflows", workflowRouter);
 
 export default app;
