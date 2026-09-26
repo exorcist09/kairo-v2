@@ -1,7 +1,7 @@
 import express from "express";
 import morgan from "morgan";
-import authRouter from "./routes/auth.route";
-import profileRouter from "./routes/profile.route";
+import authRouter from "./auth/auth.route";
+import profileRouter from "./profile/profile.route";
 import cookieParser from "cookie-parser";
 
 const app = express();
@@ -19,6 +19,7 @@ app.get("/health", (req, res) => {
 });
 
 app.use("/api/auth/", authRouter);
+
 app.use("/api", profileRouter);
 
 export default app;
