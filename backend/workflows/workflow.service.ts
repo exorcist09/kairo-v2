@@ -1,7 +1,20 @@
 import { prisma } from "../lib/prisma";
-import { WorkflowStatus } from "@prisma/client";
+import type { WorkflowStatus } from "@prisma/client";
 
+interface FlowNode {
+  id: string;
+  type: string;
+  position: { x: number; y: number };
+  data: Record<string, unknown>;
+}
 
+interface FlowEdge {
+  id: string;
+  source: string;
+  target: string;
+  sourceHandle?: string;
+  targetHandle?: string;
+}
 
 // createWorkflow
 export const create = async (
@@ -9,41 +22,56 @@ export const create = async (
   workflowName: string,
   workflowDescription?: string,
 ) => {
-  return await prisma.workflow.create({
+  return await prisma.Workflow.create({
     data: {
       workflowName,
       workflowDescription,
       userId,
-      status: "DRAFT",
+      workflowStatus: "DRAFT",
     },
   });
 };
 
-// simple getAllWorkflows
-// export const getAll = async (userId: string) => {
-//   return await prisma.workflow.findMany({
-//     where: { id: userId },
-//     orderBy: {
-//       updatedAt: "desc",
-//     },
-//   });
-// };
 
 // get Workflow by Id
 export const getbyId = async (userId: string, workflowId: string) => {
-  const workflow = await prisma.workflow.findFirst({
+
+  const workflow = await prisma.Workflow.findFirst({
     where: { id: workflowId, userId },
+    include: { nodes: true, connections: true },
   });
 
   if (!workflow) {
     throw new Error("Workflow not found");
   }
-  return workflow;
+
+  // Convert server/database nodes to React Flow format casue thats how reactflow needs it 
+  const nodes: FlowNode[] = workflow.nodes.map((node: any) => ({
+    id: node.id,
+    type: node.type,
+    position: node.position as { x: number; y: number },
+    data: (node.data as Record<string, unknown>) || {},
+  }));
+
+  // Convert server/database connections to React Flow edges
+  const edges: FlowEdge[] = workflow.connections.map((connection: any) => ({
+    id: connection.id,
+    source: connection.fromNodeId,
+    target: connection.toNodeId,
+    sourceHandle: connection.fromOutput,
+    targetHandle: connection.toInput,
+  }));
+
+  return {
+    ...workflow,
+    nodes,
+    edges,
+  };
 };
 
 // deleteWorkflow
 export const remove = async (workflowId: string, userId: string) => {
-  const workflow = await prisma.workflow.findFirst({
+  const workflow = await prisma.Workflow.findFirst({
     where: {
       id: workflowId,
       userId,
@@ -53,7 +81,7 @@ export const remove = async (workflowId: string, userId: string) => {
     throw new Error("Workflow not found");
   }
 
-  return await prisma.workflow.delete({
+  return await prisma.Workflow.delete({
     where: {
       id: workflowId,
     },
@@ -75,8 +103,8 @@ export const getAll = async (
     userId,
 
     // only add status to the query if provided, if provided like DRAFT it gets added to the query of postgres
-    ...(status &&  {
-      status: status,
+    ...(status && {
+      workflowStatus: status,
     }),
 
     // same as status
@@ -89,7 +117,7 @@ export const getAll = async (
   }
 
     const [workflows, total] = await Promise.all([
-    prisma.workflow.findMany({
+    prisma.Workflow.findMany({
       where,
       orderBy: {
         updatedAt: "desc",
@@ -98,7 +126,7 @@ export const getAll = async (
       take: limit,
     }),
 
-    prisma.workflow.count({
+    prisma.Workflow.count({
       where,
     }),
   ]);

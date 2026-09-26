@@ -18,6 +18,7 @@ import {
   ReactFlowProvider,
   useReactFlow,
 } from "@xyflow/react";
+import { nodeComponents } from "./node-components";
 import "@xyflow/react/dist/style.css";
 import CustomNode, { WorkflowNodeData } from "./CustomNode";
 import { NodePaletteItem } from "./EditorSidebar";
@@ -30,126 +31,6 @@ interface EditorCanvasProps {
   externalAddNodeRef?: React.MutableRefObject<((item: NodePaletteItem) => void) | null>;
 }
 
-const DEFAULT_NODES_BY_ID: Record<string, { nodes: Node[]; edges: Edge[] }> = {
-  "1": {
-    nodes: [
-      {
-        id: "node-1",
-        type: "workflowNode",
-        position: { x: 100, y: 180 },
-        data: {
-          title: "Stripe Webhook",
-          subtitle: "Listen for charge.succeeded events",
-          category: "trigger",
-          iconName: "webhook",
-          config: { endpoint: "https://api.kairo.dev/v1/stripe/webhook" },
-          status: "idle",
-        },
-      },
-      {
-        id: "node-2",
-        type: "workflowNode",
-        position: { x: 460, y: 180 },
-        data: {
-          title: "Format Customer Payload",
-          subtitle: "Extract customer ID, amount, and items",
-          category: "logic",
-          iconName: "branch",
-          config: { filter: "amount > 0" },
-          status: "idle",
-        },
-      },
-      {
-        id: "node-3",
-        type: "workflowNode",
-        position: { x: 820, y: 180 },
-        data: {
-          title: "Insert Order Record",
-          subtitle: "INSERT INTO orders (id, customer, amount)",
-          category: "action",
-          iconName: "database",
-          config: { table: "orders" },
-          status: "idle",
-        },
-      },
-    ],
-    edges: [
-      {
-        id: "e1-2",
-        source: "node-1",
-        target: "node-2",
-        animated: true,
-        style: { stroke: "#2563EB", strokeWidth: 2 },
-      },
-      {
-        id: "e2-3",
-        source: "node-2",
-        target: "node-3",
-        animated: true,
-        style: { stroke: "#2563EB", strokeWidth: 2 },
-      },
-    ],
-  },
-  "2": {
-    nodes: [
-      {
-        id: "node-1",
-        type: "workflowNode",
-        position: { x: 100, y: 180 },
-        data: {
-          title: "Daily Cron Schedule",
-          subtitle: "Runs recurring daily at 00:00 UTC",
-          category: "trigger",
-          iconName: "cron",
-          config: { schedule: "0 0 * * *" },
-          status: "idle",
-        },
-      },
-      {
-        id: "node-2",
-        type: "workflowNode",
-        position: { x: 460, y: 180 },
-        data: {
-          title: "PostgreSQL Snapshot",
-          subtitle: "Execute pg_dump --format=custom",
-          category: "action",
-          iconName: "database",
-          config: { database: "production_db" },
-          status: "idle",
-        },
-      },
-      {
-        id: "node-3",
-        type: "workflowNode",
-        position: { x: 820, y: 180 },
-        data: {
-          title: "Upload to S3 Bucket",
-          subtitle: "PUT /backups/postgres-latest.tar.gz",
-          category: "action",
-          iconName: "http",
-          config: { bucket: "s3://kairo-encrypted-backups" },
-          status: "idle",
-        },
-      },
-    ],
-    edges: [
-      {
-        id: "e1-2",
-        source: "node-1",
-        target: "node-2",
-        animated: true,
-        style: { stroke: "#2563EB", strokeWidth: 2 },
-      },
-      {
-        id: "e2-3",
-        source: "node-2",
-        target: "node-3",
-        animated: true,
-        style: { stroke: "#2563EB", strokeWidth: 2 },
-      },
-    ],
-  },
-};
 
 function InnerEditorCanvas({
   workflowId,
@@ -160,7 +41,7 @@ function InnerEditorCanvas({
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const { screenToFlowPosition, fitView } = useReactFlow();
 
-  const initialData = DEFAULT_NODES_BY_ID[workflowId] || {
+  const initialData = {
     nodes: [
       {
         id: "node-1",
@@ -205,7 +86,9 @@ function InnerEditorCanvas({
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
   const selectedNodeData = selectedNode ? (selectedNode.data as unknown as WorkflowNodeData) : null;
 
-  const nodeTypes = useMemo<any>(() => ({ workflowNode: CustomNode }), []);
+
+
+
 
   // Node deletions
   const handleDeleteNode = useCallback((id: string) => {
@@ -213,6 +96,7 @@ function InnerEditorCanvas({
     setEdges((eds) => eds.filter((e) => e.source !== id && e.target !== id));
     setSelectedNode((cur) => (cur?.id === id ? null : cur));
   }, []);
+
 
   // Inject onDelete callback into node data
   useEffect(() => {
@@ -389,7 +273,7 @@ function InnerEditorCanvas({
       <ReactFlow
         nodes={nodes}
         edges={edges}
-        nodeTypes={nodeTypes}
+        nodeTypes={nodeComponents}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
@@ -398,15 +282,15 @@ function InnerEditorCanvas({
         onNodeClick={onNodeClick}
         onPaneClick={onPaneClick}
         fitView
+        proOptions={{hideAttribution:true}}
       >
-        {/* Background with black dots at 70% opacity as requested */}
         <Background
-          variant={BackgroundVariant.Dots}
+          variant={BackgroundVariant.Cross}
           color="rgba(0, 0, 0, 0.7)"
           gap={20}
           size={1.2}
         />
-        <Controls className="!bg-white !border !border-gray-200 !rounded-xl !shadow-sm overflow-hidden" />
+        <Controls className="!bg-white text-[#2563EB] !border !border-gray-200 !rounded-xl !shadow-sm overflow-hidden" />
         <MiniMap
           nodeColor="#2563EB"
           className="!bg-white/90 !border !border-gray-200 !rounded-xl !shadow-sm overflow-hidden"

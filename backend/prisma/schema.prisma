@@ -20,7 +20,7 @@ model user {
   country   String
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
-  workflows workflow[]
+  workflows Workflow[]
 }
 
 enum WorkflowStatus {
@@ -30,7 +30,7 @@ enum WorkflowStatus {
   FAILED
 }
 
-model workflow {
+model Workflow {
   id                  String         @id @default(uuid())
   workflowName        String
   workflowDescription String?
@@ -39,6 +39,53 @@ model workflow {
   userId String
   user   user   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  nodes       Node[]
+  connections Connection[]
+}
+
+enum NodeType {
+  OPENAI
+  GEMINI
+  SLACK
+}
+
+
+// one particular node in editor
+model Node {
+  id         String   @id @default(uuid())
+  workflowId String
+  workflow   Workflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+
+  name     String
+  type     NodeType
+  position Json
+  data     Json     @default("{}")
+
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+  outputConnections Connection[] @relation("FromNode")
+  inputConnections  Connection[] @relation("ToNode")
+}
+
+// model connection represents the edges connection 
+model Connection {
+  id         String   @id @default(uuid())
+  workflowId String
+  workflow   Workflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+
+  fromNodeId String
+  fromNode   Node   @relation("FromNode", fields: [fromNodeId], references: [id], onDelete: Cascade)
+
+  toNodeId String
+  toNode   Node   @relation("ToNode", fields: [toNodeId], references: [id], onDelete: Cascade)
+
+  fromOutput String @default("main")
+  toInput    String @default("main")
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@unique([fromNodeId, toNodeId, fromOutput, toInput])
 }
