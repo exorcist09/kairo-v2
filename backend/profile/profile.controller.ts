@@ -40,3 +40,102 @@ export const profileController = async (req: Request, res: Response) => {
     });
   }
 };
+
+
+export const updateProfileController = async (req: Request, res: Response) => {
+
+  try {
+    const token = req.headers.authorization?.split(" ")[1];
+
+    if (!token) {
+      return res.status(401).json({
+        message: "Token not found",
+      });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
+      id: string;
+    };
+
+    const { name, country, phone } = req.body
+
+    const result = await profileService.updateProfile(decoded.id, {name, country, phone})
+
+    return res.status(200).json({
+      message: "User updated successfully",
+      user: result
+    })
+  } catch (error) {
+    return res.status(400).json({
+      message: error instanceof Error
+        ? error.message
+        : "Failed to update profile",
+    });
+  }
+
+
+}
+
+export const updateEmail = async (req: Request, res: Response) => {
+
+  try {
+    const token = req.headers.authorization?.split(" ")[1];
+
+    if (!token) {
+      return res.status(401).json({
+        message: "Token not found",
+      });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
+      id: string;
+    };
+
+    const { email } = req.body
+
+    const result = await profileService.updateEmail(decoded.id, email)
+
+    return res.status(200).json({
+      message: "Email updated successfully",
+      email: result.email
+    })
+  } catch (error) {
+    return res.status(400).json({
+      message: error instanceof Error
+        ? error.message
+        : "Failed to update email",
+    });
+  }
+
+}
+
+
+export const updatePassword = async (req: Request, res: Response) => {
+
+  try {
+    const token = req.headers.authorization?.split(" ")[1];
+
+    if (!token) {
+      return res.status(401).json({
+        message: "Token not found",
+      });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
+      id: string;
+    };
+
+    const { currentPassword, newPassword } = req.body
+
+    const result = await profileService.updatePassword(decoded.id, currentPassword, newPassword)
+
+    return res.status(200).json(result)
+  } catch (error) {
+    return res.status(400).json({
+      message: error instanceof Error
+        ? error.message
+        : "Failed to update password",
+    });
+  }
+
+}

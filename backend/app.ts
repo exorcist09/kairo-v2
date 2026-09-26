@@ -18,7 +18,7 @@ app.get("/health", (req, res) => {
   res.status(200).json({ success: true, message: "HEALTH OK" });
 });
 
-app.use("/api/auth/", authRouter);
+app.use("/api/auth", authRouter);
 
 app.use("/api", profileRouter);
 
