@@ -2,7 +2,7 @@ import type { Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import * as workflowService from "./workflow.service";
 
-const getUserId = async (req: Request) => {
+const getUserId = (req: Request) => {
   const token = req.headers.authorization?.split(" ")[1];
 
   if (!token) {
@@ -72,7 +72,12 @@ export const getWorkflowById = async (req: Request, res: Response) => {
 
     const workflowId = req.params.id;
 
-    const workflow = workflowService.getbyId(workflowId, userId);
+    if (!workflowId || Array.isArray(workflowId)) {
+      return res.status(400).json({
+        message: "Invalid workflow ID",
+      });
+    }
+    const workflow = await workflowService.getbyId(userId, workflowId);
 
     return res.status(200).json({
       workflow,
@@ -90,6 +95,11 @@ export const deleteWorkflow = async (req: Request, res: Response) => {
   try {
     const userId = getUserId(req);
     const workflowId = req.params.id;
+    if (!workflowId || Array.isArray(workflowId)) {
+      return res.status(400).json({
+        message: "Invalid workflow ID",
+      });
+    }
     await workflowService.remove(workflowId, userId);
     return res.status(200).json({
       message: "Workflow deleted successfully",
