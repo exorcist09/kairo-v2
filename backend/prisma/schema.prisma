@@ -9,18 +9,19 @@ datasource db {
   provider = "postgresql"
 }
 
-model user {
-  id        String     @id @default(uuid())
-  avatar    String
-  username  String     @unique
-  email     String     @unique
-  name      String?
-  password  String
-  phone     String
-  country   String
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
-  workflows Workflow[]
+model User {
+  id          String       @id @default(uuid())
+  avatar      String
+  username    String       @unique
+  email       String       @unique
+  name        String?
+  password    String
+  phone       String
+  country     String
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  workflows   Workflow[]
+  credentials Credential[]
 }
 
 enum WorkflowStatus {
@@ -37,7 +38,7 @@ model Workflow {
   workflowStatus      WorkflowStatus @default(DRAFT)
 
   userId String
-  user   user   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
@@ -52,7 +53,6 @@ enum NodeType {
   GEMINI
   SLACK
 }
-
 
 // one particular node in editor
 model Node {
@@ -90,4 +90,16 @@ model Connection {
   updatedAt DateTime @updatedAt
 
   @@unique([fromNodeId, toNodeId, fromOutput, toInput])
+}
+
+model Credential {
+  id    String @id @default(uuid())
+  name  String
+  value String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
