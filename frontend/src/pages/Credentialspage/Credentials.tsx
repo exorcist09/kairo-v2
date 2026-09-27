@@ -4,13 +4,9 @@ import { useState } from "react";
 import {
   Key,
   Plus,
-  ShieldCheck,
-  LockKey,
   X,
   Eye,
-  EyeSlash,
-  CheckCircle,
-  Copy,
+  EyeClosed,
   Trash,
 } from "@phosphor-icons/react";
 
@@ -18,26 +14,92 @@ interface CredentialItem {
   id: string;
   name: string;
   provider: string;
+  value: string;
   createdAt: string;
 }
 
-const POPULAR_PROVIDERS = [
-  { name: "OpenAI", type: "API Key", color: "bg-gray-100 text-gray-800 border-gray-200"},
-  { name: "Stripe", type: "Secret Key", color: "bg-gray-100 text-gray-800 border-gray-200" },
-  { name: "GitHub", type: "Personal Access Token", color: "bg-gray-100 text-gray-800 border-gray-200" },
-  { name: "Slack", type: "Bot Token", color: "bg-gray-100 text-gray-800 border-gray-200"},
-  { name: "PostgreSQL", type: "Database URI", color: "bg-gray-100 text-gray-800 border-gray-200" },
+const PROVIDER_OPTIONS = [
+  { value: "OpenAI", label: "OpenAI API", placeholder: "sk-proj-••••••••••••••••" },
+  { value: "Google Gemini", label: "Google Gemini", placeholder: "AIzaSy••••••••••••••••" },
+  { value: "Slack", label: "Slack Bot", placeholder: "xoxb-••••••••••••••••" },
+  { value: "Email", label: "Email", placeholder: "smtp_pass_••••••••••••••••" },
+  { value: "PostgreSQL", label: "PostgreSQL Database", placeholder: "postgresql://user:pass@host:5432/db" },
+  { value: "Google Form", label: "Google Form", placeholder: "1FAIpQLSc••••••••••••••••" },
 ];
 
+const INITIAL_CREDENTIALS: CredentialItem[] = [
+  {
+    id: "cred-openai",
+    name: "OpenAI Production Key",
+    provider: "OpenAI",
+    value: "sk-proj-a98Fk2091mKLa98172bvc891240182",
+    createdAt: "2 days ago",
+  },
+  {
+    id: "cred-gemini",
+    name: "Gemini API Secret",
+    provider: "Google Gemini",
+    value: "AIzaSyD83921049182309124kLmNpQrStU",
+    createdAt: "3 days ago",
+  },
+  {
+    id: "cred-slack",
+    name: "Slack Bot Token",
+    provider: "Slack",
+    value: "xoxb-9182309182-1928301928371-aBcDeF",
+    createdAt: "1 week ago",
+  },
+  {
+    id: "cred-email",
+    name: "Email SMTP Secret",
+    provider: "Email",
+    value: "smtp_live_9812739018239012389102",
+    createdAt: "1 week ago",
+  },
+  {
+    id: "cred-postgres",
+    name: "Production PostgreSQL",
+    provider: "PostgreSQL",
+    value: "postgresql://kairo_admin:P@ssw0rd99@db.kairo.dev:5432/main",
+    createdAt: "2 weeks ago",
+  },
+  {
+    id: "cred-google-form",
+    name: "Google Form Access Key",
+    provider: "Google Form",
+    value: "1FAIpQLSc837192847192849182039182",
+    createdAt: "3 weeks ago",
+  },
+];
+
+function maskKey(val: string) {
+  if (!val) return "••••••••••••••••";
+  if (val.length <= 8) return "••••••••••••••••";
+  return val.slice(0, 4) + "••••••••••••" + val.slice(-4);
+}
+
 export default function Credentials() {
-  const [credentials, setCredentials] = useState<CredentialItem[]>([]);
+  const [credentials, setCredentials] = useState<CredentialItem[]>(INITIAL_CREDENTIALS);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [revealedIds, setRevealedIds] = useState<Set<string>>(new Set());
 
   // Form State
   const [name, setName] = useState("");
   const [provider, setProvider] = useState("OpenAI");
   const [secretKey, setSecretKey] = useState("");
-  const [showSecret, setShowSecret] = useState(false);
+  const [showModalSecret, setShowModalSecret] = useState(false);
+
+  const toggleReveal = (id: string) => {
+    setRevealedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
 
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,18 +109,27 @@ export default function Credentials() {
       id: `cred-${Date.now()}`,
       name: name.trim(),
       provider,
+      value: secretKey.trim(),
       createdAt: "Just now",
     };
 
     setCredentials([newCred, ...credentials]);
     setName("");
     setSecretKey("");
+    setShowModalSecret(false);
     setIsModalOpen(false);
   };
 
   const handleDelete = (id: string) => {
     setCredentials((prev) => prev.filter((c) => c.id !== id));
+    setRevealedIds((prev) => {
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
   };
+
+  const currentProviderObj = PROVIDER_OPTIONS.find((p) => p.value === provider) || PROVIDER_OPTIONS[0];
 
   return (
     <div className="w-full h-full flex flex-col">
@@ -73,7 +144,13 @@ export default function Credentials() {
 
         <button
           type="button"
-          onClick={() => setIsModalOpen(true)}
+          onClick={() => {
+            setName("");
+            setSecretKey("");
+            setProvider("OpenAI");
+            setShowModalSecret(false);
+            setIsModalOpen(true);
+          }}
           className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-blue-700 transition-colors shadow-xs cursor-pointer flex-shrink-0"
         >
           <Plus weight="bold" className="w-4 h-4" />
@@ -84,7 +161,7 @@ export default function Credentials() {
       {/* Main Container */}
       <div className="flex-1 border border-gray-200 rounded-2xl bg-white overflow-hidden flex flex-col">
         {credentials.length === 0 ? (
-          /* Empty State */
+          /* Empty State (Without Supported Integrations) */
           <div className="flex-1 flex flex-col items-center justify-center p-8 sm:p-12 text-center max-w-lg mx-auto">
             {/* Visual Icon Badge */}
             <div className="relative mb-6">
@@ -96,82 +173,84 @@ export default function Credentials() {
             <h2 className="text-xl font-bold text-gray-900 mb-2">
               No credentials connected yet
             </h2>
+            <p className="text-xs text-gray-500 max-w-sm mb-6">
+              Connect API keys and secrets for OpenAI, Gemini, Slack, Email, PostgreSQL, and Google Forms.
+            </p>
 
             {/* Primary Action Button */}
             <button
               type="button"
               onClick={() => setIsModalOpen(true)}
-              className="flex mt-4 items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-6 py-3 rounded-xl transition-all shadow-xs hover:shadow-md cursor-pointer mb-10"
+              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-6 py-3 rounded-xl transition-all shadow-xs hover:shadow-md cursor-pointer"
             >
               <Plus weight="bold" className="w-4 h-4" />
               <span>Connect Your First Credential</span>
             </button>
-
-            {/* Supported Integrations Pills */}
-            <div className="w-full pt-8 border-t border-gray-100 flex flex-col items-center">
-              <span className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-3">
-                Supported Integrations
-              </span>
-              <div className="flex flex-wrap items-center justify-center gap-2">
-                {POPULAR_PROVIDERS.map((p) => (
-                  <button
-                    key={p.name}
-                    type="button"
-                    onClick={() => {
-                      setProvider(p.name);
-                      setName(`${p.name} Key`);
-                      setIsModalOpen(true);
-                    }}
-                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border ${p.color} hover:opacity-90 transition-opacity cursor-pointer`}
-                  >
-                    <span>{p.name}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
           </div>
         ) : (
-          /* Credentials List (When Items Exist) */
+          /* Credentials List (Shows dummy state for each provider) */
           <div className="flex-1 overflow-y-auto no-scrollbar p-6 flex flex-col gap-3">
-            {credentials.map((item) => (
-              <div
-                key={item.id}
-                className="flex items-center justify-between p-4 rounded-xl border border-gray-200/80 bg-white hover:border-gray-300 transition-colors shadow-xs"
-              >
-                <div className="flex items-center gap-3.5">
-                  <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0">
-                    <Key weight="bold" className="w-5 h-5" />
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-sm font-bold text-gray-900">{item.name}</span>
-                    <div className="flex items-center gap-2 text-xs text-gray-500">
-                      <span className="font-medium text-gray-700">{item.provider}</span>
-                      <span>•</span>
-                      <span>Created {item.createdAt}</span>
+            {credentials.map((item) => {
+              const isRevealed = revealedIds.has(item.id);
+              return (
+                <div
+                  key={item.id}
+                  className="flex items-center justify-between p-4 rounded-xl border border-gray-200/80 bg-white hover:border-gray-300 transition-colors shadow-xs gap-4"
+                >
+                  <div className="flex items-center gap-3.5 min-w-0">
+                    <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0">
+                      <Key weight="bold" className="w-5 h-5" />
+                    </div>
+                    <div className="flex flex-col min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-bold text-gray-900 truncate">
+                          {item.name}
+                        </span>
+                        <span className="text-[10px] font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-200/60 shrink-0">
+                          {item.provider}
+                        </span>
+                      </div>
+
+                      {/* API Key Plain Text */}
+                      <div className="mt-1">
+                        <span className="font-mono text-xs text-gray-500 truncate max-w-[200px] sm:max-w-sm block select-none">
+                          {isRevealed ? item.value : maskKey(item.value)}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="flex items-center gap-2">
-                  <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-200/60">
-                    <CheckCircle weight="fill" className="w-3.5 h-3.5" /> Encrypted
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => handleDelete(item.id)}
-                    aria-label="Delete credential"
-                    className="p-2 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
-                  >
-                    <Trash weight="bold" className="w-4 h-4" />
-                  </button>
+                  <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => toggleReveal(item.id)}
+                      title={isRevealed ? "Hide key" : "Show key"}
+                      aria-label={isRevealed ? "Hide key" : "Show key"}
+                      className="p-2 rounded-lg text-gray-400 hover:text-blue-600 active:text-blue-700 hover:bg-blue-50 transition-colors cursor-pointer select-none"
+                    >
+                      {isRevealed ? (
+                        <EyeClosed weight="bold" className="w-4 h-4 text-blue-600" />
+                      ) : (
+                        <Eye weight="bold" className="w-4 h-4" />
+                      )}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(item.id)}
+                      aria-label="Delete credential"
+                      className="p-2 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
+                    >
+                      <Trash weight="bold" className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
 
-      {/* New Credential Modal (Matches CreateWorkflowModal styling) */}
+      {/* New Credential Modal */}
       {isModalOpen && (
         <div
           role="dialog"
@@ -199,22 +278,27 @@ export default function Credentials() {
 
             {/* Form */}
             <form onSubmit={handleCreate} className="flex flex-col gap-4">
-              {/* Provider Selection */}
+              {/* Provider Selection (Filtered by NodeType: OpenAI, Gemini, Slack, Email, PostgreSQL, Google Form) */}
               <div className="flex flex-col gap-1.5">
                 <label className="text-xs font-semibold uppercase tracking-wider text-gray-700">
-                  Service / Provider
+                  Service / Integration
                 </label>
                 <select
                   value={provider}
-                  onChange={(e) => setProvider(e.target.value)}
+                  onChange={(e) => {
+                    const nextP = e.target.value;
+                    setProvider(nextP);
+                    if (!name || name.endsWith("Key") || name.endsWith("Token")) {
+                      setName(`${nextP} Key`);
+                    }
+                  }}
                   className="px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-gray-900 bg-white cursor-pointer"
                 >
-                  <option value="OpenAI">OpenAI API</option>
-                  <option value="Stripe">Stripe Payments</option>
-                  <option value="GitHub">GitHub</option>
-                  <option value="Slack">Slack Bot</option>
-                  <option value="PostgreSQL">PostgreSQL Database</option>
-                  <option value="Custom">Custom Bearer Token / Key</option>
+                  {PROVIDER_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
                 </select>
               </div>
 
@@ -228,39 +312,45 @@ export default function Credentials() {
                   required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="e.g. Production Stripe Key"
+                  placeholder={`e.g. ${provider} Production Key`}
                   className="px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-gray-900 bg-white"
                 />
               </div>
 
-              {/* Secret Value */}
+              {/* Secret Value with Toggle Reveal */}
               <div className="flex flex-col gap-1.5">
                 <label className="text-xs font-semibold uppercase tracking-wider text-gray-700">
                   Secret Value <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <input
-                    type={showSecret ? "text" : "password"}
+                    type={showModalSecret ? "text" : "password"}
                     required
                     value={secretKey}
                     onChange={(e) => setSecretKey(e.target.value)}
-                    placeholder="sk-live-••••••••••••••••"
+                    placeholder={currentProviderObj.placeholder}
                     className="w-full pl-4 pr-11 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-gray-900 bg-white font-mono"
                   />
                   <button
                     type="button"
-                    onClick={() => setShowSecret(!showSecret)}
-                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
+                    onClick={() => setShowModalSecret((prev) => !prev)}
+                    title={showModalSecret ? "Hide secret" : "Show secret"}
+                    aria-label={showModalSecret ? "Hide secret" : "Show secret"}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 active:text-blue-600 transition-colors cursor-pointer select-none p-1"
                   >
-                    {showSecret ? <EyeSlash className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    {showModalSecret ? (
+                      <EyeClosed weight="bold" className="w-5 h-5 text-blue-600" />
+                    ) : (
+                      <Eye className="w-5 h-5" />
+                    )}
                   </button>
                 </div>
                 <p className="text-[11px] text-gray-500">
-                  Encrypted securely before saving. Only workflow runners can decrypt this.
+                  Click eye icon to toggle secret visibility. Encrypted securely before saving.
                 </p>
               </div>
 
-              {/* Modal Buttons: Two Full Length in One Row */}
+              {/* Modal Buttons */}
               <div className="grid grid-cols-2 gap-3 w-full pt-3">
                 <button
                   type="button"
