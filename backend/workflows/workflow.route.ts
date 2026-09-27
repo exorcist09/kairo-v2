@@ -9,9 +9,12 @@ workflowRouter.get("/", workflowController.getAllWorkflowsController);
 workflowRouter.post("/", workflowController.createWorkflowController);
 
 // get a particualr workflow to open editor
-workflowRouter.get("/:id", workflowController.getWorkflowById);
+workflowRouter.get("/:id", workflowController.getWorkflowByIdController);
+
+// update workflow
+workflowRouter.post("/:id", workflowController.saveController);
 
 // delete workflow
-workflowRouter.delete("/:id", workflowController.deleteWorkflow);
+workflowRouter.delete("/:id", workflowController.deleteWorkflowController);
 
 export default workflowRouter;

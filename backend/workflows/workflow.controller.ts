@@ -83,7 +83,10 @@ export const createWorkflowController = async (req: Request, res: Response) => {
 };
 
 // get workflow by Id
-export const getWorkflowById = async (req: Request, res: Response) => {
+export const getWorkflowByIdController = async (
+  req: Request,
+  res: Response,
+) => {
   try {
     const userId = getUserId(req);
 
@@ -107,8 +110,7 @@ export const getWorkflowById = async (req: Request, res: Response) => {
 };
 
 // deleteWorkdlow
-
-export const deleteWorkflow = async (req: Request, res: Response) => {
+export const deleteWorkflowController = async (req: Request, res: Response) => {
   try {
     const userId = getUserId(req);
     const workflowId = req.params.id;
@@ -126,4 +128,33 @@ export const deleteWorkflow = async (req: Request, res: Response) => {
       message: error instanceof Error ? error.message : "Workflow not found",
     });
   }
+};
+
+// Save workflow
+export const saveController = async (req: Request, res: Response) => {
+  const userId = getUserId(req);
+  const workflowId = req.params.id;
+  if (!workflowId || Array.isArray(workflowId)) {
+    return res.status(400).json({
+      message: "Invalid workflow ID",
+    });
+  }
+
+  const { name, type, position, data, fromNodeId, toNodeId } = req.body;
+
+  const savedWorkflow = await workflowService.saveWorkflow(
+    workflowId,
+    userId,
+    name,
+    type,
+    position,
+    data,
+    fromNodeId,
+    toNodeId,
+  );
+
+  return res.status(200).json({
+    message: "Workflow updated successfully",
+    savedWorkflow,
+  });
 };

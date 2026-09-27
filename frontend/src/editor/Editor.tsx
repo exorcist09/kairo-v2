@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
-import EditorSidebar, { NodePaletteItem } from "./EditorSidebar";
+import EditorSidebar, { NodePaletteItem } from "./sidebar/EditorSidebar";
 import EditorTopbar from "./EditorTopbar";
 import EditorCanvas from "./EditorCanvas";
 import EditorWorker from "./EditorWorker";

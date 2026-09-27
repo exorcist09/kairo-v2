@@ -21,16 +21,24 @@ import {
 import { nodeComponents } from "./node-components";
 import "@xyflow/react/dist/style.css";
 import CustomNode, { WorkflowNodeData } from "./CustomNode";
-import { NodePaletteItem } from "./EditorSidebar";
-import { X, Trash, Play, Lightning, Sparkle, Database } from "@phosphor-icons/react";
+import { NodePaletteItem } from "./sidebar/EditorSidebar";
+import {
+  X,
+  Trash,
+  Play,
+  Lightning,
+  Sparkle,
+  Database,
+} from "@phosphor-icons/react";
 
 interface EditorCanvasProps {
   workflowId: string;
   isExecuting: boolean;
   onExecutionComplete?: () => void;
-  externalAddNodeRef?: React.MutableRefObject<((item: NodePaletteItem) => void) | null>;
+  externalAddNodeRef?: React.MutableRefObject<
+    ((item: NodePaletteItem) => void) | null
+  >;
 }
-
 
 function InnerEditorCanvas({
   workflowId,
@@ -41,54 +49,12 @@ function InnerEditorCanvas({
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const { screenToFlowPosition, fitView } = useReactFlow();
 
-  const initialData = {
-    nodes: [
-      {
-        id: "node-1",
-        type: "workflowNode",
-        position: { x: 140, y: 180 },
-        data: {
-          title: "Webhook Trigger",
-          subtitle: "Listen for incoming JSON payloads",
-          category: "trigger",
-          iconName: "webhook",
-          config: { endpoint: "https://api.kairo.dev/v1/webhook" },
-          status: "idle",
-        },
-      },
-      {
-        id: "node-2",
-        type: "workflowNode",
-        position: { x: 540, y: 180 },
-        data: {
-          title: "PostgreSQL Database",
-          subtitle: "Insert or query records",
-          category: "action",
-          iconName: "database",
-          config: { table: "events" },
-          status: "idle",
-        },
-      },
-    ],
-    edges: [
-      {
-        id: "e1-2",
-        source: "node-1",
-        target: "node-2",
-        animated: true,
-        style: { stroke: "#2563EB", strokeWidth: 2 },
-      },
-    ],
-  };
-
-  const [nodes, setNodes] = useState<Node[]>(initialData.nodes);
-  const [edges, setEdges] = useState<Edge[]>(initialData.edges);
+  const [nodes, setNodes] = useState<Node[]>([]);
+  const [edges, setEdges] = useState<Edge[]>([]);
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
-  const selectedNodeData = selectedNode ? (selectedNode.data as unknown as WorkflowNodeData) : null;
-
-
-
-
+  const selectedNodeData = selectedNode
+    ? (selectedNode.data as unknown as WorkflowNodeData)
+    : null;
 
   // Node deletions
   const handleDeleteNode = useCallback((id: string) => {
@@ -96,7 +62,6 @@ function InnerEditorCanvas({
     setEdges((eds) => eds.filter((e) => e.source !== id && e.target !== id));
     setSelectedNode((cur) => (cur?.id === id ? null : cur));
   }, []);
-
 
   // Inject onDelete callback into node data
   useEffect(() => {
@@ -107,7 +72,7 @@ function InnerEditorCanvas({
           ...n.data,
           onDelete: handleDeleteNode,
         },
-      }))
+      })),
     );
   }, [handleDeleteNode]);
 
@@ -118,13 +83,13 @@ function InnerEditorCanvas({
         nds.map((n) => ({
           ...n,
           data: { ...n.data, status: "idle" },
-        }))
+        })),
       );
       setEdges((eds) =>
         eds.map((e) => ({
           ...e,
           animated: false,
-        }))
+        })),
       );
       return;
     }
@@ -143,7 +108,7 @@ function InnerEditorCanvas({
             return { ...n, data: { ...n.data, status: "running" } };
           }
           return { ...n, data: { ...n.data, status: "idle" } };
-        })
+        }),
       );
 
       step++;
@@ -153,7 +118,7 @@ function InnerEditorCanvas({
           nds.map((n) => ({
             ...n,
             data: { ...n.data, status: "success" },
-          }))
+          })),
         );
         onExecutionComplete?.();
       }
@@ -173,13 +138,13 @@ function InnerEditorCanvas({
 
       const newNode: Node = {
         id: newNodeId,
-        type: "workflowNode",
+        type: item.type,
         position,
         data: {
           title: item.title,
-          subtitle: item.subtitle,
+          subtitle: item.description || item.subtitle || "",
           category: item.category,
-          iconName: item.iconName,
+          iconName: item.iconName || "webhook",
           status: "idle",
           onDelete: handleDeleteNode,
         },
@@ -187,7 +152,7 @@ function InnerEditorCanvas({
 
       setNodes((nds) => [...nds, newNode]);
     },
-    [nodes, handleDeleteNode]
+    [nodes, handleDeleteNode],
   );
 
   // Expose addNode method to parent via ref
@@ -198,13 +163,15 @@ function InnerEditorCanvas({
   }, [addNodeFromPalette, externalAddNodeRef]);
 
   const onNodesChange = useCallback(
-    (changes: NodeChange<Node>[]) => setNodes((nds) => applyNodeChanges(changes, nds)),
-    []
+    (changes: NodeChange<Node>[]) =>
+      setNodes((nds) => applyNodeChanges(changes, nds)),
+    [],
   );
 
   const onEdgesChange = useCallback(
-    (changes: EdgeChange<Edge>[]) => setEdges((eds) => applyEdgeChanges(changes, eds)),
-    []
+    (changes: EdgeChange<Edge>[]) =>
+      setEdges((eds) => applyEdgeChanges(changes, eds)),
+    [],
   );
 
   const onConnect = useCallback(
@@ -216,10 +183,10 @@ function InnerEditorCanvas({
             animated: true,
             style: { stroke: "#2563EB", strokeWidth: 2 },
           },
-          eds
-        )
+          eds,
+        ),
       ),
-    []
+    [],
   );
 
   // HTML5 Drag and Drop from Sidebar
@@ -243,13 +210,13 @@ function InnerEditorCanvas({
 
       const newNode: Node = {
         id: `node-${Date.now()}`,
-        type: "workflowNode",
+        type: item.type,
         position,
         data: {
           title: item.title,
-          subtitle: item.subtitle,
+          subtitle: item.description || item.subtitle || "",
           category: item.category,
-          iconName: item.iconName,
+          iconName: item.iconName || "webhook",
           status: "idle",
           onDelete: handleDeleteNode,
         },
@@ -257,7 +224,7 @@ function InnerEditorCanvas({
 
       setNodes((nds) => [...nds, newNode]);
     },
-    [screenToFlowPosition, handleDeleteNode]
+    [screenToFlowPosition, handleDeleteNode],
   );
 
   const onNodeClick = useCallback((_: React.MouseEvent, node: Node) => {
@@ -282,7 +249,7 @@ function InnerEditorCanvas({
         onNodeClick={onNodeClick}
         onPaneClick={onPaneClick}
         fitView
-        proOptions={{hideAttribution:true}}
+        proOptions={{ hideAttribution: true }}
       >
         <Background
           variant={BackgroundVariant.Cross}
@@ -293,7 +260,7 @@ function InnerEditorCanvas({
         <Controls className="!bg-white text-[#2563EB] !border !border-gray-200 !rounded-xl !shadow-sm overflow-hidden" />
         <MiniMap
           nodeColor="#2563EB"
-          className="!bg-white/90 !border !border-gray-200 !rounded-xl !shadow-sm overflow-hidden"
+          className="!bg-gray-300/90 !border !border-gray-200 !rounded-xl !shadow-sm overflow-hidden"
           zoomable
           pannable
         />
@@ -322,7 +289,9 @@ function InnerEditorCanvas({
 
           <div className="flex flex-col gap-3">
             <div className="flex flex-col gap-1">
-              <label className="text-xs font-semibold text-gray-700">Node Label</label>
+              <label className="text-xs font-semibold text-gray-700">
+                Node Label
+              </label>
               <input
                 type="text"
                 value={selectedNodeData.title}
@@ -332,11 +301,13 @@ function InnerEditorCanvas({
                     nds.map((n) =>
                       n.id === selectedNode.id
                         ? { ...n, data: { ...n.data, title: newTitle } }
-                        : n
-                    )
+                        : n,
+                    ),
                   );
                   setSelectedNode((prev) =>
-                    prev ? { ...prev, data: { ...prev.data, title: newTitle } } : null
+                    prev
+                      ? { ...prev, data: { ...prev.data, title: newTitle } }
+                      : null,
                   );
                 }}
                 className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
@@ -344,7 +315,9 @@ function InnerEditorCanvas({
             </div>
 
             <div className="flex flex-col gap-1">
-              <label className="text-xs font-semibold text-gray-700">Description</label>
+              <label className="text-xs font-semibold text-gray-700">
+                Description
+              </label>
               <input
                 type="text"
                 value={selectedNodeData.subtitle}
@@ -354,13 +327,16 @@ function InnerEditorCanvas({
                     nds.map((n) =>
                       n.id === selectedNode.id
                         ? { ...n, data: { ...n.data, subtitle: newSubtitle } }
-                        : n
-                    )
+                        : n,
+                    ),
                   );
                   setSelectedNode((prev) =>
                     prev
-                      ? { ...prev, data: { ...prev.data, subtitle: newSubtitle } }
-                      : null
+                      ? {
+                          ...prev,
+                          data: { ...prev.data, subtitle: newSubtitle },
+                        }
+                      : null,
                   );
                 }}
                 className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"

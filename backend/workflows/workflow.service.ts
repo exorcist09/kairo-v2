@@ -32,10 +32,8 @@ export const create = async (
   });
 };
 
-
 // get Workflow by Id
 export const getbyId = async (userId: string, workflowId: string) => {
-
   const workflow = await prisma.Workflow.findFirst({
     where: { id: workflowId, userId },
     include: { nodes: true, connections: true },
@@ -45,7 +43,7 @@ export const getbyId = async (userId: string, workflowId: string) => {
     throw new Error("Workflow not found");
   }
 
-  // Convert server/database nodes to React Flow format casue thats how reactflow needs it 
+  // Convert server/database nodes to React Flow format casue thats how reactflow needs it
   const nodes: FlowNode[] = workflow.nodes.map((node: any) => ({
     id: node.id,
     type: node.type,
@@ -96,7 +94,7 @@ export const getAll = async (
   status?: WorkflowStatus,
   search?: string,
 ) => {
-  const skip = (page-1)*limit; //skips the first obtained number page=2 limit 10 then =(2-1)*10 = 10(means skips first 10 then return next 10)
+  const skip = (page - 1) * limit; //skips the first obtained number page=2 limit 10 then =(2-1)*10 = 10(means skips first 10 then return next 10)
 
   // this is what we give to prisma
   const where = {
@@ -108,15 +106,15 @@ export const getAll = async (
     }),
 
     // same as status
-    ...(search &&  {
+    ...(search && {
       workflowName: {
-        contains:search,  //actual value the user woudl search 
+        contains: search, //actual value the user woudl search
         mode: "insensitive" as const, //case insensitive
-      }
-    })
-  }
+      },
+    }),
+  };
 
-    const [workflows, total] = await Promise.all([
+  const [workflows, total] = await Promise.all([
     prisma.Workflow.findMany({
       where,
       orderBy: {
@@ -131,7 +129,6 @@ export const getAll = async (
     }),
   ]);
 
-
   return {
     workflows,
     pagination: {
@@ -141,5 +138,45 @@ export const getAll = async (
       totalPages: Math.ceil(total / limit),
     },
   };
+};
 
+// save workflow in order to store node and edges when user has created the workflow
+
+export const saveWorkflow = async (
+  workflowId: string,
+  userId: string,
+  name: string,
+  type: string,
+  position: string,
+  data: string,
+  fromNodeId: string,
+  toNodeId: string,
+) => {
+  const workflow = await prisma.Workflow.findFirst({
+    where: { id: userId },
+  });
+
+  if (!workflow) {
+    throw new Error("User not found");
+  }
+
+  const node = await prisma.Node.create({
+    where: { id: workflowId },
+    data: {
+      name,
+      type,
+      position,
+      data,
+    },
+  });
+
+  const edge = await prisma.Connection.create({
+    where: { id: workflowId },
+    data: {
+      fromNodeId,
+      toNodeId,
+    },
+  });
+
+  return { node, edge };
 };

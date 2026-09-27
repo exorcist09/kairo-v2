@@ -57,22 +57,12 @@ export default function EditorTopbar({
           <button
             type="button"
             onClick={() => onViewChange("worker")}
-            className={`relative z-10 px-5 py-1.5 rounded-lg text-xs font-semibold transition-colors w-24 text-center cursor-pointer ${
+            className={`flex items-center justify-center gap-3 ml-3 relative z-10 px-5 py-1.5 rounded-lg text-xs font-semibold transition-colors w-24 text-center cursor-pointer ${
               view === "worker" ? "text-blue-600 font-bold" : "text-gray-500 hover:text-gray-800"
             }`}
           >
             Worker
-          </button>
-        </div>
-
-        {/* Disabled Kai AI button outside selector */}
-        <button
-          type="button"
-          disabled
-          title="Kai AI workflow builder — Coming soon"
-          className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl border border-gray-200 bg-gray-50/80 text-gray-400 text-xs font-medium cursor-not-allowed opacity-75 shadow-2xs select-none"
-        >
-          <div className="w-4 h-4 flex items-center justify-center flex-shrink-0">
+            <div className="w-4 h-4 flex items-center justify-center flex-shrink-0">
             <svg viewBox="0 0 100 100" fill="none" className="w-3.5 h-3.5">
               <path
                 fillRule="evenodd"
@@ -82,11 +72,8 @@ export default function EditorTopbar({
               />
             </svg>
           </div>
-          <span className="text-gray-700 font-bold text-xs">Kai</span>
-          <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-gray-200 text-gray-500">
-            Coming Soon
-          </span>
-        </button>
+          </button>
+        </div>
       </div>
 
       {/* Right: Single Execute / Stop Button */}

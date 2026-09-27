@@ -46,6 +46,8 @@ model Workflow {
 }
 
 enum NodeType {
+  MANUAL_TRIGGER
+  HTTP_TRIGGER
   OPENAI
   GEMINI
   SLACK
