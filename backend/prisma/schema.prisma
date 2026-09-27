@@ -94,6 +94,7 @@ model Connection {
 
 model Credential {
   id    String @id @default(uuid())
+  type  String
   name  String
   value String
 

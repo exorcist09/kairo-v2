@@ -2,7 +2,7 @@ import type { Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import * as workflowService from "./workflow.service";
 
-const getUserId = (req: Request) => {
+export const getUserId = (req: Request) => {
   const token = req.headers.authorization?.split(" ")[1];
 
   if (!token) {
