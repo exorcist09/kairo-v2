@@ -1,7 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { Play, Stop, ArrowLeft, CheckCircle, ArrowsClockwise } from "@phosphor-icons/react";
+import {
+  Play,
+  Stop,
+  ArrowLeft,
+  CheckCircle,
+  ArrowsClockwise,
+  HardDriveIcon,
+  FileIcon,
+  FloppyDiskBackIcon,
+} from "@phosphor-icons/react";
 
 interface EditorTopbarProps {
   workflowName?: string;
@@ -49,7 +58,9 @@ export default function EditorTopbar({
             type="button"
             onClick={() => onViewChange("editor")}
             className={`relative z-10 px-5 py-1.5 rounded-lg text-xs font-semibold transition-colors w-24 text-center cursor-pointer ${
-              view === "editor" ? "text-blue-600 font-bold" : "text-gray-500 hover:text-gray-800"
+              view === "editor"
+                ? "text-blue-600 font-bold"
+                : "text-gray-500 hover:text-gray-800"
             }`}
           >
             Editor
@@ -58,26 +69,28 @@ export default function EditorTopbar({
             type="button"
             onClick={() => onViewChange("worker")}
             className={`flex items-center justify-center gap-3 ml-3 relative z-10 px-5 py-1.5 rounded-lg text-xs font-semibold transition-colors w-24 text-center cursor-pointer ${
-              view === "worker" ? "text-blue-600 font-bold" : "text-gray-500 hover:text-gray-800"
+              view === "worker"
+                ? "text-blue-600 font-bold"
+                : "text-gray-500 hover:text-gray-800"
             }`}
           >
             Worker
             <div className="w-4 h-4 flex items-center justify-center flex-shrink-0">
-            <svg viewBox="0 0 100 100" fill="none" className="w-3.5 h-3.5">
-              <path
-                fillRule="evenodd"
-                clipRule="evenodd"
-                d="M 44.5 11.2 Q 50 8 55.5 11.2 L 82.5 26.8 Q 88 30 88 36 L 88 64 Q 88 70 82.5 73.2 L 55.5 88.8 Q 50 92 44.5 88.8 L 17.5 73.2 Q 12 70 12 64 L 12 36 Q 12 30 17.5 26.8 Z M 51.8 32.3 Q 56 30 60.2 32.4 L 82.5 45.0 Q 86 47 81.5 49.5 L 48.2 67.7 Q 44 70 39.8 67.6 L 17.5 55.0 Q 14 53 18.5 50.5 Z"
-                fill="#000000"
-              />
-            </svg>
-          </div>
+              <svg viewBox="0 0 100 100" fill="none" className="w-3.5 h-3.5">
+                <path
+                  fillRule="evenodd"
+                  clipRule="evenodd"
+                  d="M 44.5 11.2 Q 50 8 55.5 11.2 L 82.5 26.8 Q 88 30 88 36 L 88 64 Q 88 70 82.5 73.2 L 55.5 88.8 Q 50 92 44.5 88.8 L 17.5 73.2 Q 12 70 12 64 L 12 36 Q 12 30 17.5 26.8 Z M 51.8 32.3 Q 56 30 60.2 32.4 L 82.5 45.0 Q 86 47 81.5 49.5 L 48.2 67.7 Q 44 70 39.8 67.6 L 17.5 55.0 Q 14 53 18.5 50.5 Z"
+                  fill="#000000"
+                />
+              </svg>
+            </div>
           </button>
         </div>
       </div>
 
       {/* Right: Single Execute / Stop Button */}
-      <div className="flex-1 flex justify-end items-center">
+      <div className="flex-1 flex justify-end items-center gap-2">
         <button
           type="button"
           onClick={isExecuting ? onStop : onExecute}
@@ -98,6 +111,16 @@ export default function EditorTopbar({
               <span>Execute</span>
             </>
           )}
+        </button>
+        <button
+          type="button"
+          className={"flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all shadow-xs cursor-pointer flex-shrink-0 bg-blue-600"}
+        >
+            <>
+              <FloppyDiskBackIcon weight="fill" className="w-3.5 h-3.5" />
+              <span>Save</span>
+            </>
+          
         </button>
       </div>
     </div>

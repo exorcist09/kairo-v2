@@ -151,6 +151,7 @@ export const saveWorkflow = async (
   data: string,
   fromNodeId: string,
   toNodeId: string,
+  updatedAt: number
 ) => {
   const workflow = await prisma.Workflow.findFirst({
     where: { id: userId },
@@ -167,6 +168,7 @@ export const saveWorkflow = async (
       type,
       position,
       data,
+      updatedAt
     },
   });
 
@@ -175,6 +177,7 @@ export const saveWorkflow = async (
     data: {
       fromNodeId,
       toNodeId,
+      updatedAt
     },
   });
 

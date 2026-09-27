@@ -140,7 +140,7 @@ export const saveController = async (req: Request, res: Response) => {
     });
   }
 
-  const { name, type, position, data, fromNodeId, toNodeId } = req.body;
+  const { name, type, position, data, fromNodeId, toNodeId, updatedAt} = req.body;
 
   const savedWorkflow = await workflowService.saveWorkflow(
     workflowId,
@@ -151,6 +151,7 @@ export const saveController = async (req: Request, res: Response) => {
     data,
     fromNodeId,
     toNodeId,
+    updatedAt
   );
 
   return res.status(200).json({
