@@ -10,18 +10,21 @@ datasource db {
 }
 
 model User {
-  id          String       @id @default(uuid())
-  avatar      String
-  username    String       @unique
-  email       String       @unique
-  name        String?
-  password    String
-  phone       String
-  country     String
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  workflows   Workflow[]
-  credentials Credential[]
+  id             String           @id @default(uuid())
+  avatar         String
+  username       String           @unique
+  email          String           @unique
+  name           String?
+  password       String
+  phone          String
+  country        String
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  workflows      Workflow[]
+  credentials    Credential[]
+  creditBalance  Int              @default(100)
+  creditPurchase CreditPurchase[]
+  creditLedgers  CreditLedger[]
 }
 
 enum WorkflowStatus {
@@ -104,3 +107,94 @@ model Credential {
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  REFUNDED
+}
+
+model CreditPurchase {
+  id String @id @default(uuid())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  planId           String
+  creditsPurchased Int
+  creditPlan       CreditPlan? @relation(fields: [planId], references: [id])
+
+  amountPaid Decimal
+  currency   String  @default("INR")
+
+  status PaymentStatus @default(PENDING)
+
+  providerRefId     String? @unique // Razorpay order_id
+  providerPaymentId String? @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  creditLedger CreditLedger?
+}
+
+enum LedgerEntryType {
+  PURCHASE
+  USAGE
+  REFUND
+  MONTHLY_FREE_RESET
+}
+
+// this would have a whole history of credits in users account liek when it was used as well, when refunded, when purchased, when bonus extra
+model CreditLedger {
+  id String @id @default(uuid())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type         LedgerEntryType
+  amount       Int
+  balanceAfter Int
+
+  purchaseId String?         @unique
+  purchase   CreditPurchase? @relation(fields: [purchaseId], references: [id])
+
+  createdAt DateTime @default(now())
+}
+
+enum CreditPlanType {
+  FREE_TIER
+  SMALL
+  MEDIUM
+  LARGE
+  CUSTOM
+}
+
+// this is the schema of what a user can buy(plan)-> all sepearted from the user DB
+model CreditPlan {
+  id String @id @default(uuid())
+
+  type           CreditPlanType @unique
+  label          String
+  credits        Int?
+  price          Decimal?       @db.Decimal(10, 2)
+  pricePerCredit Decimal?       @db.Decimal(10, 4)
+
+  minCredits Int?
+  maxCredits Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  purchases CreditPurchase[]
+}
+
+/**
+ * | type   | credits | price | pricePerCredit |
+ * | ------ | ------: | ----: | -------------: |
+ * | SMALL  |     100 |   ₹49 |           null |
+ * | MEDIUM |     500 |  ₹199 |           null |
+ * | LARGE  |    1200 |  ₹399 |           null |
+ * | CUSTOM |    null |  null |          ₹0.40 |
+ */
