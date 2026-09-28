@@ -10,22 +10,36 @@ import {
   LockSimple,
   ArrowRight,
 } from "@phosphor-icons/react";
+import { login } from "@/api/auth.api";
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    window.location.href = "/home";
+    try {
+      const data = await login({
+        email,
+        password,
+      });
+
+      console.log("Login successful:", data);
+      window.location.href = "/home";
+    } catch (error: any) {
+      console.error(error.response?.data?.message || "Login failed");
+    }
   };
 
   return (
     <div className="min-h-screen w-full bg-white flex flex-col justify-between p-6 sm:p-10 relative">
       {/* Top Left: Kairo Logo fixed (like sidebar) */}
       <div className="fixed top-6 left-6 sm:top-8 sm:left-10 z-50 pointer-events-auto">
-        <Link href="/" className="inline-block transition-opacity hover:opacity-80">
+        <Link
+          href="/"
+          className="inline-block transition-opacity hover:opacity-80"
+        >
           <Image
             src="/Kairo.png"
             alt="Kairo"
@@ -102,7 +116,11 @@ export default function Login() {
                 aria-label={showPassword ? "Hide password" : "Show password"}
                 className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none transition-colors cursor-pointer"
               >
-                {showPassword ? <EyeSlash className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                {showPassword ? (
+                  <EyeSlash className="w-5 h-5" />
+                ) : (
+                  <Eye className="w-5 h-5" />
+                )}
               </button>
             </div>
           </div>
@@ -113,14 +131,20 @@ export default function Login() {
             className="w-full bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold py-3 px-4 rounded-xl shadow-sm transition-all hover:shadow-md active:scale-[0.99] flex items-center justify-center gap-2 group mt-3 cursor-pointer"
           >
             <span>Log In</span>
-            <ArrowRight weight="bold" className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+            <ArrowRight
+              weight="bold"
+              className="w-4 h-4 transition-transform group-hover:translate-x-1"
+            />
           </button>
         </form>
 
         {/* Footer */}
         <p className="mt-8 text-center text-sm text-gray-500">
           Don't have an account?{" "}
-          <Link href="/register" className="font-semibold text-blue-600 hover:text-blue-700 hover:underline">
+          <Link
+            href="/register"
+            className="font-semibold text-blue-600 hover:text-blue-700 hover:underline"
+          >
             Sign up
           </Link>
         </p>

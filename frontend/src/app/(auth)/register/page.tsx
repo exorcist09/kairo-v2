@@ -14,6 +14,7 @@ import {
   Info,
 } from "@phosphor-icons/react";
 import AvatarSelector from "@/shared/AvatarSelector";
+import { register } from "@/api/auth.api";
 
 export default function Register() {
   const [showPassword, setShowPassword] = useState(false);
@@ -24,17 +25,35 @@ export default function Register() {
   const [password, setPassword] = useState("");
   const [agreedToTerms, setAgreedToTerms] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!agreedToTerms) return;
-    window.location.href = "/home";
+    try {
+      const data = await register({
+        avatar,
+        username,
+        name,
+        email,
+        password,
+      });
+      console.log("Registration successful:", data);
+
+      window.location.href = "/home";
+    } catch (error: any) {
+  console.error(
+    error.response?.data?.message || "Registration failed"
+  );
+}
   };
 
   return (
     <div className="h-screen w-full bg-white relative overflow-hidden flex flex-col">
       {/* Top Left: Fixed Logo that never scrolls */}
       <div className="fixed top-6 left-6 sm:top-8 sm:left-10 z-50 pointer-events-auto">
-        <Link href="/" className="inline-block transition-opacity hover:opacity-80">
+        <Link
+          href="/"
+          className="inline-block transition-opacity hover:opacity-80"
+        >
           <Image
             src="/Kairo.png"
             alt="Kairo"
@@ -55,7 +74,8 @@ export default function Register() {
               Create your account
             </h1>
             <p className="text-sm text-gray-500">
-              Join Kairo to start building, deploying, and monitoring automations.
+              Join Kairo to start building, deploying, and monitoring
+              automations.
             </p>
           </div>
 
@@ -85,13 +105,18 @@ export default function Register() {
                   type="text"
                   required
                   value={username}
-                  onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""))}
-                  placeholder="e.g. johndoe"
+                  onChange={(e) =>
+                    setUsername(
+                      e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""),
+                    )
+                  }
+                  placeholder="johndoe"
                   className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 bg-gray-50/50 text-sm text-gray-900 placeholder:text-gray-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all font-mono text-sm"
                 />
               </div>
               <p className="text-[11px] text-gray-500">
-                Your unique handle (lowercase letters, numbers, underscores). This cannot be modified once set.
+                Your unique handle (lowercase letters, numbers, underscores).
+                This cannot be modified once set.
               </p>
             </div>
 
@@ -158,7 +183,11 @@ export default function Register() {
                   aria-label={showPassword ? "Hide password" : "Show password"}
                   className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none transition-colors cursor-pointer"
                 >
-                  {showPassword ? <EyeSlash className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  {showPassword ? (
+                    <EyeSlash className="w-5 h-5" />
+                  ) : (
+                    <Eye className="w-5 h-5" />
+                  )}
                 </button>
               </div>
             </div>
@@ -173,7 +202,10 @@ export default function Register() {
                 onChange={(e) => setAgreedToTerms(e.target.checked)}
                 className="mt-0.5 w-4 h-4 rounded text-blue-600 border-gray-300 focus:ring-blue-500 focus:ring-offset-0 cursor-pointer"
               />
-              <label htmlFor="terms" className="text-xs text-gray-600 leading-relaxed cursor-pointer select-none">
+              <label
+                htmlFor="terms"
+                className="text-xs text-gray-600 leading-relaxed cursor-pointer select-none"
+              >
                 I agree to Kairo's{" "}
                 <Link href="/terms" className="text-blue-600 hover:underline">
                   Terms of Service
@@ -192,14 +224,20 @@ export default function Register() {
               className="w-full bg-blue-600 hover:bg-blue-700 active:bg-blue-800 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-3 px-4 rounded-xl shadow-sm transition-all hover:shadow-md active:scale-[0.99] flex items-center justify-center gap-2 group mt-3 cursor-pointer"
             >
               <span>Create Account</span>
-              <ArrowRight weight="bold" className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+              <ArrowRight
+                weight="bold"
+                className="w-4 h-4 transition-transform group-hover:translate-x-1"
+              />
             </button>
           </form>
 
           {/* Footer */}
           <p className="mt-8 text-center text-sm text-gray-500">
             Already have an account?{" "}
-            <Link href="/login" className="font-semibold text-blue-600 hover:text-blue-700 hover:underline">
+            <Link
+              href="/login"
+              className="font-semibold text-blue-600 hover:text-blue-700 hover:underline"
+            >
               Log in
             </Link>
           </p>
