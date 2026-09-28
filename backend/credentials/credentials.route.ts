@@ -5,8 +5,8 @@ const credentialsRouter = Router();
 
 credentialsRouter.get("/", credentialsController.getAllCredentialsController);
 
-credentialsRouter.get(
-  "/savecredentials",
+credentialsRouter.post(
+  "/save",
   credentialsController.savecredentialsController,
 );
 
