@@ -176,7 +176,6 @@ model CreditPlan {
   id String @id @default(uuid())
 
   type           CreditPlanType @unique
-  label          String
   credits        Int?
   price          Decimal?       @db.Decimal(10, 2)
   pricePerCredit Decimal?       @db.Decimal(10, 4)
@@ -185,16 +184,6 @@ model CreditPlan {
   maxCredits Int?
 
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 
   purchases CreditPurchase[]
 }
-
-/**
- * | type   | credits | price | pricePerCredit |
- * | ------ | ------: | ----: | -------------: |
- * | SMALL  |     100 |   ₹49 |           null |
- * | MEDIUM |     500 |  ₹199 |           null |
- * | LARGE  |    1200 |  ₹399 |           null |
- * | CUSTOM |    null |  null |          ₹0.40 |
- */

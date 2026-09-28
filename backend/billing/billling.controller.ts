@@ -55,6 +55,13 @@ export const makePurchaseController = async (req: Request, res: Response) => {
   try {
     const userId = getUserId(req);
     const { type, credits } = req.body;
+
+    console.log("Purchase request:", {
+      userId,
+      type,
+      credits,
+    });
+
     const purchase = await billingService.makePayment(userId, type, credits);
 
     return res.status(200).json({
@@ -62,6 +69,7 @@ export const makePurchaseController = async (req: Request, res: Response) => {
       purchase,
     });
   } catch (error) {
+    console.error("MAKE PAYMENT ERROR:", error);
     return res.status(400).json({
       message:
         error instanceof Error ? error.message : "Failed to make payment",

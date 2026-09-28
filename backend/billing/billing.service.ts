@@ -1,8 +1,9 @@
+import type { CreditPlanType } from "../generated/prisma/enums";
 import { prisma } from "../lib/prisma";
 import { razorpay } from "../lib/razorpay";
 
 export const getPlans = async () => {
-  return prisma.CreditPlan.findMany({
+  return prisma.creditPlan.findMany({
     orderBy: {
       price: "asc",
     },
@@ -10,15 +11,19 @@ export const getPlans = async () => {
 };
 
 export const getBalance = async (userId: string) => {
-  const user = await prisma.User.findUnique({
+  const user = await prisma.user.findUnique({
     where: { id: userId },
   });
+
+  if (!user) {
+    throw new Error("User not found");
+  }
 
   return user.creditBalance;
 };
 
 export const getHistory = async (userId: string) => {
-  return prisma.CreditLedger.findMany({
+  return prisma.creditLedger.findMany({
     where: { id: userId },
     orderBy: {
       createdAt: "desc",
@@ -28,11 +33,12 @@ export const getHistory = async (userId: string) => {
 
 export const makePayment = async (
   userId: string,
-  type: String,
-  credits: number,
+  type: CreditPlanType,
+  credits?: number,
 ) => {
+
   // 1. find plan frontend woudl already send -> Free_tier, small, medium, large, custom
-  const plan = await prisma.CreditPlan.findUnique({
+  const plan = await prisma.creditPlan.findUnique({
     where: { type: type },
   });
 
@@ -62,7 +68,7 @@ export const makePayment = async (
     creditsToBePurchased = credits;
     amountToBePaid = credits * Number(plan.pricePerCredit);
   } else {
-    // for FREE_TIER, SMALL, MEDIUM, LARGE
+    // for FREE_TIER, SMALL, MEDIUM, LARGE, then u need not to send the credits as well
     if (plan.credits === null || plan.price === null) {
       throw new Error("Invalid credit plan configuration");
     }
@@ -72,7 +78,7 @@ export const makePayment = async (
   }
 
   //   3. Create a purchase record in Db
-  const purchase = await prisma.CreditPurchase.create({
+  const purchase = await prisma.creditPurchase.create({
     data: {
       userId,
       planId: plan.id,
