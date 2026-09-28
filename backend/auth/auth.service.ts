@@ -37,7 +37,7 @@ export const login = async (email: string, password: string) => {
 }
 
 
-export const register = async (avatar: String, username: string, name: string, email: string, password: string) => {
+export const register = async (avatar: string, username: string, name: string, email: string, password: string) => {
 
     const userAlreadyExists = await prisma.user.findFirst({
         where: {
@@ -52,7 +52,7 @@ export const register = async (avatar: String, username: string, name: string, e
     const hashPassword = await bcrypt.hash(password, 10);
 
 
-    // stroing the user
+    // storing the user
     const newUser = await prisma.user.create({
         data: {
             avatar,

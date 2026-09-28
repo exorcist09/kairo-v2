@@ -38,7 +38,6 @@ export const loginController = async (req: Request, res: Response) => {
       email: result.user.email,
       username: result.user.username,
       name: result.user.name,
-      verified: result.user.verified,
     },
     token: result.accessToken,
     refreshToken: result.refreshToken
