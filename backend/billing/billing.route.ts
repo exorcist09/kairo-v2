@@ -10,6 +10,12 @@ billingRouter.get("/plans", billingController.getPlansController);
 billingRouter.get("/balance", billingController.getBalanceController);
 
 billingRouter.get("/ledger", billingController.getHistoryController);
+
+
 billingRouter.post("/purchase", billingController.makePurchaseController);
+billingRouter.post("/create-order", billingController.makePurchaseController);
+billingRouter.post("/verify", billingController.verifyPaymentController);
+billingRouter.post("/verify-payment", billingController.verifyPaymentController);
 
 export default billingRouter;
+

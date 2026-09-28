@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import type { CreditPlanType } from "../generated/prisma/enums";
 import { prisma } from "../lib/prisma";
 import { razorpay } from "../lib/razorpay";
@@ -24,7 +25,7 @@ export const getBalance = async (userId: string) => {
 
 export const getHistory = async (userId: string) => {
   return prisma.creditLedger.findMany({
-    where: { id: userId },
+    where: { userId },
     orderBy: {
       createdAt: "desc",
     },
@@ -77,6 +78,10 @@ export const makePayment = async (
     amountToBePaid = Number(plan.price);
   }
 
+  if (amountToBePaid <= 0) {
+    throw new Error("Cannot create payment order for free plan");
+  }
+
   //   3. Create a purchase record in Db
   const purchase = await prisma.creditPurchase.create({
     data: {
@@ -96,6 +101,11 @@ export const makePayment = async (
     receipt: purchase.id,
   });
 
+  await prisma.creditPurchase.update({
+    where: { id: purchase.id },
+    data: { providerRefId: razorpayOrder.id },
+  });
+
   return {
     purchaseId: purchase.id,
 
@@ -111,3 +121,106 @@ export const makePayment = async (
     razorpayKey: process.env.RAZORPAY_KEY_ID,
   };
 };
+
+interface VerifyPaymentParams {
+  orderId: string;
+  paymentId: string;
+  signature: string;
+}
+
+export const verifyPayment = async ({
+  orderId,
+  paymentId,
+  signature,
+}: VerifyPaymentParams) => {
+  const secret = process.env.RAZORPAY_KEY_SECRET;
+  if (!secret) {
+    throw new Error("Razorpay secret is not configured on the server");
+  }
+
+  // 1. Generate expected HMAC SHA256 signature: HMAC-SHA256(order_id + "|" + payment_id, KEY_SECRET)
+  const generatedSignature = crypto
+    .createHmac("sha256", secret)
+    .update(`${orderId}|${paymentId}`)
+    .digest("hex");
+
+  // 2. Compare generated signature with razorpay_signature using timingSafeEqual
+  const isMatch =
+    generatedSignature.length === signature.length &&
+    crypto.timingSafeEqual(
+      Buffer.from(generatedSignature),
+      Buffer.from(signature),
+    );
+
+  if (!isMatch) {
+    await prisma.creditPurchase.updateMany({
+      where: { providerRefId: orderId },
+      data: { status: "FAILED" },
+    });
+    throw new Error("Payment signature verification failed");
+  }
+
+  // 3. Find purchase record by Razorpay order ID (providerRefId)
+  const purchase = await prisma.creditPurchase.findUnique({
+    where: { providerRefId: orderId },
+  });
+
+  if (!purchase) {
+    throw new Error("Purchase order record not found");
+  }
+
+  // Idempotency: if already processed, return current balance
+  if (purchase.status === "SUCCESS") {
+    const user = await prisma.user.findUnique({
+      where: { id: purchase.userId },
+    });
+    return {
+      success: true,
+      message: "Payment already verified",
+      purchaseId: purchase.id,
+      creditsAdded: purchase.creditsPurchased,
+      balance: user?.creditBalance ?? 0,
+    };
+  }
+
+  // 4. Atomic transaction: mark purchase SUCCESS, credit user balance, log in ledger
+  const result = await prisma.$transaction(async (tx) => {
+    const updatedPurchase = await tx.creditPurchase.update({
+      where: { id: purchase.id },
+      data: {
+        status: "SUCCESS",
+        providerPaymentId: paymentId,
+      },
+    });
+
+    const updatedUser = await tx.user.update({
+      where: { id: purchase.userId },
+      data: {
+        creditBalance: {
+          increment: purchase.creditsPurchased,
+        },
+      },
+    });
+
+    const ledger = await tx.creditLedger.create({
+      data: {
+        userId: purchase.userId,
+        type: "PURCHASE",
+        amount: purchase.creditsPurchased,
+        balanceAfter: updatedUser.creditBalance,
+        purchaseId: purchase.id,
+      },
+    });
+
+    return { updatedPurchase, updatedUser, ledger };
+  });
+
+  return {
+    success: true,
+    message: "Payment verified successfully",
+    purchaseId: result.updatedPurchase.id,
+    creditsAdded: purchase.creditsPurchased,
+    newBalance: result.updatedUser.creditBalance,
+  };
+};
+

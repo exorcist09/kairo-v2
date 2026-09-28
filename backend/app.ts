@@ -1,4 +1,5 @@
 import express from "express";
+import cors from "cors";
 import morgan from "morgan";
 import authRouter from "./auth/auth.route";
 import profileRouter from "./profile/profile.route";
@@ -9,6 +10,7 @@ import billingRouter from "./billing/billing.route";
 
 const app = express();
 
+app.use(cors({ origin: true, credentials: true }));
 app.use(express.json()); // in order to get body from the request
 app.use(morgan("dev")); // in order to log
 app.use(cookieParser()); // in order to read cookie for refresh token

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   Coins,
@@ -64,10 +64,190 @@ const PRESET_PACKS: CreditPack[] = [
   },
 ];
 
+const loadRazorpayScript = (): Promise<boolean> => {
+  return new Promise((resolve) => {
+    if (typeof window !== "undefined" && (window as any).Razorpay) {
+      resolve(true);
+      return;
+    }
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.async = true;
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+};
+
 export default function Billing() {
   const router = useRouter();
   const [selectedPack, setSelectedPack] = useState("medium");
   const [customCredits, setCustomCredits] = useState<number | "">("");
+  const [loading, setLoading] = useState(false);
+  const [creditBalance, setCreditBalance] = useState<number>(649);
+  const [paymentStatus, setPaymentStatus] = useState<{
+    type: "success" | "error" | "info";
+    message: string;
+  } | null>(null);
+
+  useEffect(() => {
+    const fetchBalance = async () => {
+      try {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+        const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+        const res = await fetch(`${apiUrl}/billing/balance`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (typeof data.balance === "number") {
+            setCreditBalance(data.balance);
+          }
+        }
+      } catch {
+        // keep default balance if backend not reachable
+      }
+    };
+    fetchBalance();
+  }, []);
+
+  const handleCheckout = async () => {
+    try {
+      setLoading(true);
+      setPaymentStatus(null);
+
+      const isLoaded = await loadRazorpayScript();
+      if (!isLoaded) {
+        throw new Error("Razorpay SDK failed to load. Check your internet connection.");
+      }
+
+      let planType: "SMALL" | "MEDIUM" | "LARGE" | "CUSTOM" = "MEDIUM";
+      let creditsCount: number | undefined = undefined;
+
+      if (selectedPack === "small") planType = "SMALL";
+      else if (selectedPack === "medium") planType = "MEDIUM";
+      else if (selectedPack === "large") planType = "LARGE";
+      else if (selectedPack === "custom") {
+        planType = "CUSTOM";
+        creditsCount = Number(customCredits);
+      }
+
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+
+      // 1. Create order on backend
+      const orderRes = await fetch(`${apiUrl}/billing/purchase`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          type: planType,
+          credits: creditsCount,
+        }),
+      });
+
+      const orderData = await orderRes.json();
+      if (!orderRes.ok) {
+        throw new Error(orderData.message || "Failed to create order");
+      }
+
+      const orderInfo = orderData.purchase?.order || orderData.order;
+      const razorpayKey =
+        orderData.purchase?.razorpayKey ||
+        process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID
+
+      // 2. Open Razorpay Standard Checkout modal
+      const options = {
+        key: razorpayKey,
+        amount: orderInfo.amount,
+        currency: orderInfo.currency || "INR",
+        name: "Kairo",
+        description: `${summary.credits.toLocaleString()} Credits Top-up`,
+        image: "/Kairo.png",
+        order_id: orderInfo.id,
+        handler: async function (response: {
+          razorpay_payment_id: string;
+          razorpay_order_id: string;
+          razorpay_signature: string;
+        }) {
+          try {
+            setLoading(true);
+            setPaymentStatus({
+              type: "info",
+              message: "Verifying payment signature...",
+            });
+
+            // 3. Verify payment signature on backend
+            const verifyRes = await fetch(`${apiUrl}/billing/verify`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                ...(token ? { Authorization: `Bearer ${token}` } : {}),
+              },
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+              }),
+            });
+
+            const verifyData = await verifyRes.json();
+            if (!verifyRes.ok || !verifyData.success) {
+              throw new Error(verifyData.message || "Payment verification failed");
+            }
+
+            if (verifyData.newBalance !== undefined) {
+              setCreditBalance(verifyData.newBalance);
+            } else {
+              setCreditBalance((prev) => prev + summary.credits);
+            }
+
+            setPaymentStatus({
+              type: "success",
+              message: `Payment successful! Added ${summary.credits.toLocaleString()} credits to your account.`,
+            });
+          } catch (verifyErr: any) {
+            setPaymentStatus({
+              type: "error",
+              message: verifyErr?.message || "Payment verification failed",
+            });
+          } finally {
+            setLoading(false);
+          }
+        },
+        modal: {
+          ondismiss: function () {
+            setLoading(false);
+            setPaymentStatus({
+              type: "info",
+              message: "Payment window closed by user",
+            });
+          },
+        },
+        theme: {
+          color: "#2563EB",
+        },
+      };
+
+      const rzpInstance = new (window as any).Razorpay(options);
+      rzpInstance.on("payment.failed", function (response: any) {
+        setLoading(false);
+        setPaymentStatus({
+          type: "error",
+          message: response.error?.description || "Payment failed",
+        });
+      });
+      rzpInstance.open();
+    } catch (err: any) {
+      setLoading(false);
+      setPaymentStatus({
+        type: "error",
+        message: err?.message || "Failed to initiate payment",
+      });
+    }
+  };
 
   const calculateCustomPrice = (credits: number | "") => {
     if (!credits || credits <= 0) return 0;
@@ -119,7 +299,7 @@ export default function Billing() {
               <div className="z-10 relative">
                 <h2 className="text-base sm:text-lg font-bold text-gray-900">Available Credits</h2>
                 <div className="text-5xl font-extrabold text-blue-600 my-2 font-sans tracking-tight">
-                  649
+                  {creditBalance.toLocaleString()}
                 </div>
                 <div className="flex items-center gap-3 mt-3 flex-wrap">
                   <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/70">
@@ -301,16 +481,47 @@ export default function Billing() {
                 )}
               </div>
 
-              {/* Purchase Action Button (without AES-256 footer) */}
+              {/* Feedback Alert Banner */}
+              {paymentStatus && (
+                <div
+                  className={`z-10 relative p-3.5 rounded-xl text-xs font-semibold flex items-center justify-between transition-all ${
+                    paymentStatus.type === "success"
+                      ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                      : paymentStatus.type === "error"
+                      ? "bg-red-50 text-red-800 border border-red-200"
+                      : "bg-blue-50 text-blue-800 border border-blue-200"
+                  }`}
+                >
+                  <span>{paymentStatus.message}</span>
+                  <button
+                    type="button"
+                    onClick={() => setPaymentStatus(null)}
+                    className="text-xs opacity-60 hover:opacity-100 ml-3 font-bold cursor-pointer"
+                  >
+                    ✕
+                  </button>
+                </div>
+              )}
+
+              {/* Purchase Action Button */}
               <div className="z-10 relative pt-1">
                 <button
                   type="button"
-                  onClick={() => router.push("/payment")}
-                  disabled={!summary.isValid || summary.credits <= 0}
+                  onClick={handleCheckout}
+                  disabled={loading || !summary.isValid || summary.credits <= 0}
                   className="w-full flex items-center justify-center gap-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold py-3.5 px-6 rounded-xl transition-all shadow-xs cursor-pointer text-sm"
                 >
-                  <CreditCard weight="fill" className="w-5 h-5" />
-                  <span>{summary.buttonText}</span>
+                  {loading ? (
+                    <div className="flex items-center gap-2">
+                      <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <span>Processing...</span>
+                    </div>
+                  ) : (
+                    <>
+                      <CreditCard weight="fill" className="w-5 h-5" />
+                      <span>{summary.buttonText}</span>
+                    </>
+                  )}
                 </button>
               </div>
             </div>
