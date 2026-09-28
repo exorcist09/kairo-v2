@@ -28,7 +28,15 @@ export const updateProfile = async (
     data,
   });
 
-  return updatedUser;
+  return {
+    id: updatedUser.id,
+    avatar: updatedUser.avatar,
+    username: updatedUser.username,
+    name: updatedUser.name,
+    email: updatedUser.email,
+    phone: updatedUser.phone,
+    country: updatedUser.country,
+  };
 };
 
 export const updateEmail = async (userId: string, newEmail: string) => {
@@ -65,6 +73,7 @@ export const updatePassword = async (
   const user = await prisma.user.findUnique({
     where: { id: userId },
   });
+  
   if (!user) {
     throw new Error("User not found");
   }
@@ -83,7 +92,7 @@ export const updatePassword = async (
   await prisma.user.update({
     where: { id: userId },
     data: {
-      password: newPassword,
+      password: hashPassword,
     },
   });
 

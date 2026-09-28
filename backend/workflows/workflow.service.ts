@@ -1,5 +1,5 @@
 import { prisma } from "../lib/prisma";
-import type { WorkflowStatus } from "@prisma/client";
+import { WorkflowStatus } from "../generated/prisma/enums";
 
 interface FlowNode {
   id: string;
@@ -22,7 +22,7 @@ export const create = async (
   workflowName: string,
   workflowDescription?: string,
 ) => {
-  return await prisma.Workflow.create({
+  return await prisma.workflow.create({
     data: {
       workflowName,
       workflowDescription,
@@ -34,7 +34,8 @@ export const create = async (
 
 // get Workflow by Id
 export const getbyId = async (userId: string, workflowId: string) => {
-  const workflow = await prisma.Workflow.findFirst({
+
+  const workflow = await prisma.workflow.findFirst({
     where: { id: workflowId, userId },
     include: { nodes: true, connections: true },
   });
@@ -69,7 +70,7 @@ export const getbyId = async (userId: string, workflowId: string) => {
 
 // deleteWorkflow
 export const remove = async (workflowId: string, userId: string) => {
-  const workflow = await prisma.Workflow.findFirst({
+  const workflow = await prisma.workflow.findFirst({
     where: {
       id: workflowId,
       userId,
@@ -79,7 +80,7 @@ export const remove = async (workflowId: string, userId: string) => {
     throw new Error("Workflow not found");
   }
 
-  return await prisma.Workflow.delete({
+  return await prisma.workflow.delete({
     where: {
       id: workflowId,
     },
@@ -115,7 +116,7 @@ export const getAll = async (
   };
 
   const [workflows, total] = await Promise.all([
-    prisma.Workflow.findMany({
+    prisma.workflow.findMany({
       where,
       orderBy: {
         updatedAt: "desc",
@@ -124,7 +125,7 @@ export const getAll = async (
       take: limit,
     }),
 
-    prisma.Workflow.count({
+    prisma.workflow.count({
       where,
     }),
   ]);
@@ -153,7 +154,7 @@ export const saveWorkflow = async (
   toNodeId: string,
   updatedAt: number
 ) => {
-  const workflow = await prisma.Workflow.findFirst({
+  const workflow = await prisma.workflow.findFirst({
     where: { id: userId },
   });
 
@@ -161,7 +162,7 @@ export const saveWorkflow = async (
     throw new Error("User not found");
   }
 
-  const node = await prisma.Node.create({
+  const node = await prisma.node.create({
     where: { id: workflowId },
     data: {
       name,
@@ -172,7 +173,7 @@ export const saveWorkflow = async (
     },
   });
 
-  const edge = await prisma.Connection.create({
+  const edge = await prisma.connection.create({
     where: { id: workflowId },
     data: {
       fromNodeId,

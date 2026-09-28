@@ -12,6 +12,6 @@ profileRouter.patch(
 
 profileRouter.patch("/updateemail", ProfileController.updateEmail);
 
-profileRouter.put("updatepassword", ProfileController.updatePassword);
+profileRouter.put("/updatepassword", ProfileController.updatePassword);
 
 export default profileRouter;

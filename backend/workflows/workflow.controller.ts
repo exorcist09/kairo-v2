@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import * as workflowService from "./workflow.service";
+import { WorkflowStatus } from "../generated/prisma/enums";
 
 export const getUserId = (req: Request) => {
   const token = req.headers.authorization?.split(" ")[1];
@@ -26,8 +27,22 @@ export const getAllWorkflowsController = async (
 
     const limit = Math.min(Math.max(Number(req.query.limit) || 10, 1), 100);
 
-    const status =
+    const statusParam =
       typeof req.query.status === "string" ? req.query.status : undefined;
+
+    let status: WorkflowStatus | undefined;
+
+    if (statusParam) {
+      if (
+        !Object.values(WorkflowStatus).includes(statusParam as WorkflowStatus)
+      ) {
+        return res.status(400).json({
+          message: "Invalid workflow status",
+        });
+      }
+
+      status = statusParam as WorkflowStatus;
+    }
 
     const search =
       typeof req.query.search === "string"
@@ -42,7 +57,10 @@ export const getAllWorkflowsController = async (
       search,
     );
 
-    return res.status(200).json(result);
+    return res.status(200).json({
+      message: "Workflows fetched successfully",
+      result,
+    });
   } catch (error) {
     return res.status(400).json({
       message:
@@ -100,6 +118,7 @@ export const getWorkflowByIdController = async (
     const workflow = await workflowService.getbyId(userId, workflowId);
 
     return res.status(200).json({
+      message: "Workflow fetched successfully",
       workflow,
     });
   } catch (error) {
@@ -140,7 +159,8 @@ export const saveController = async (req: Request, res: Response) => {
     });
   }
 
-  const { name, type, position, data, fromNodeId, toNodeId, updatedAt} = req.body;
+  const { name, type, position, data, fromNodeId, toNodeId, updatedAt } =
+    req.body;
 
   const savedWorkflow = await workflowService.saveWorkflow(
     workflowId,
@@ -151,7 +171,7 @@ export const saveController = async (req: Request, res: Response) => {
     data,
     fromNodeId,
     toNodeId,
-    updatedAt
+    updatedAt,
   );
 
   return res.status(200).json({

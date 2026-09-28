@@ -17,13 +17,18 @@ app.get("/", (req, res) => {
   res.status(200).send("Kairo Backend");
 });
 
+// OK
 app.get("/api/health", (req, res) => {
   res.status(200).json({ success: true, message: "HEALTH OK" });
 });
 
+// OK
 app.use("/api/auth", authRouter);
 
+// OK
 app.use("/api", profileRouter);
+
+
 
 app.use("/api/workflows", workflowRouter);
 

@@ -11,7 +11,9 @@ dotenv.config();
 export const registerController = async (req: Request, res: Response) => {
   try {
     const { avatar, username, email, name, password } = req.body;
+
     const result = await authService.register(avatar, username, email, name, password)
+    
     return res.status(201).json({
       message: "User Registered Successfully",
       result,
@@ -27,7 +29,7 @@ export const registerController = async (req: Request, res: Response) => {
 };
 
 export const loginController = async (req: Request, res: Response) => {
-  const { email, password } = req.body();
+  const { email, password } = req.body;
 
   const result = await authService.login(email, password);
 
