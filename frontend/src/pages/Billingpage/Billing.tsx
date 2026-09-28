@@ -10,6 +10,7 @@ import {
   Circle,
   Receipt,
 } from "@phosphor-icons/react";
+import { getBalance, getHistory } from "@/api/billing.api";
 
 interface CreditPack {
   id: string;
@@ -84,31 +85,42 @@ export default function Billing() {
   const [selectedPack, setSelectedPack] = useState("medium");
   const [customCredits, setCustomCredits] = useState<number | "">("");
   const [loading, setLoading] = useState(false);
-  const [creditBalance, setCreditBalance] = useState<number>(649);
+  const [creditBalance, setCreditBalance] = useState<number>(0);
+  const [history, setHistory] = useState<any[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(true);
   const [paymentStatus, setPaymentStatus] = useState<{
     type: "success" | "error" | "info";
     message: string;
   } | null>(null);
 
   useEffect(() => {
-    const fetchBalance = async () => {
+    const fetchBilling = async () => {
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
-        const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
-        const res = await fetch(`${apiUrl}/billing/balance`, {
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-        });
-        if (res.ok) {
-          const data = await res.json();
-          if (typeof data.balance === "number") {
-            setCreditBalance(data.balance);
-          }
+        const balRes = await getBalance();
+        if (typeof balRes?.balance === "number") {
+          setCreditBalance(balRes.balance);
         }
-      } catch {
-        // keep default balance if backend not reachable
+      } catch (err) {
+        console.error("Failed to load balance", err);
+      }
+
+      try {
+        setHistoryLoading(true);
+        const histRes = await getHistory();
+        if (histRes?.history && Array.isArray(histRes.history)) {
+          setHistory(histRes.history);
+        } else {
+          setHistory([]);
+        }
+      } catch (err) {
+        console.error("Failed to load transaction history", err);
+        setHistory([]);
+      } finally {
+        setHistoryLoading(false);
       }
     };
-    fetchBalance();
+
+    fetchBilling();
   }, []);
 
   const handleCheckout = async () => {
@@ -598,40 +610,54 @@ export default function Billing() {
                 </p>
 
                 <div className="z-10 relative flex-1 flex flex-col gap-2.5 overflow-y-auto no-scrollbar max-h-[260px]">
-                  {[
-                    { type: "Purchase", pack: "Medium Pack", amount: "+5,000", cost: "₹3,199.00", date: "Oct 24, 2026", status: "success" },
-                    { type: "Usage", pack: "Data Scrape Workflow", amount: "-120", cost: "", date: "Oct 22, 2026", status: "success" },
-                    { type: "Usage", pack: "Email Campaign", amount: "-450", cost: "", date: "Oct 18, 2026", status: "success" },
-                    { type: "Purchase", pack: "Small Pack", amount: "+1,000", cost: "₹799.00", date: "Oct 12, 2026", status: "success" },
-                    { type: "Usage", pack: "Failed Webhook", amount: "-5", cost: "", date: "Oct 10, 2026", status: "failed" },
-                  ].map((tx, idx) => (
-                    <div
-                      key={idx}
-                      className="flex items-center justify-between p-3 rounded-xl bg-white border border-gray-200/80 hover:border-gray-300 hover:shadow-2xs transition-all"
-                    >
-                      <div className="flex flex-col">
-                        <span className="text-xs font-bold text-gray-900">
-                          {tx.type} • {tx.pack}
-                        </span>
-                        <span className="text-[11px] font-medium text-gray-400">{tx.date}</span>
-                      </div>
-                      <div className="flex flex-col items-end">
-                        <span
-                          className={`text-xs font-bold ${
-                            tx.amount.startsWith("+") ? "text-emerald-600" : "text-gray-900"
-                          }`}
-                        >
-                          {tx.amount}
-                        </span>
-                        {tx.cost && <span className="text-[11px] font-medium text-gray-400">{tx.cost}</span>}
-                        {tx.status === "failed" && (
-                          <span className="text-[9px] font-bold uppercase tracking-wider text-red-600 bg-red-50 border border-red-200 px-1.5 py-0.2 rounded mt-0.5">
-                            Failed
-                          </span>
-                        )}
-                      </div>
+                  {historyLoading ? (
+                    <div className="flex-1 flex items-center justify-center p-8">
+                      <span className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
                     </div>
-                  ))}
+                  ) : history.length === 0 ? (
+                    <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
+                      <Receipt weight="duotone" className="w-10 h-10 text-gray-300 mb-2" />
+                      <p className="text-xs font-semibold text-gray-600">No transaction history yet</p>
+                      <p className="text-[11px] text-gray-400 mt-0.5">Purchases and credit usage will show up here.</p>
+                    </div>
+                  ) : (
+                    history.map((tx: any, idx: number) => {
+                      const isPositive = tx.amount > 0;
+                      const formattedDate = tx.createdAt
+                        ? new Date(tx.createdAt).toLocaleDateString(undefined, {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                          })
+                        : "Recent";
+
+                      return (
+                        <div
+                          key={tx.id || idx}
+                          className="flex items-center justify-between p-3 rounded-xl bg-white border border-gray-200/80 hover:border-gray-300 hover:shadow-2xs transition-all"
+                        >
+                          <div className="flex flex-col">
+                            <span className="text-xs font-bold text-gray-900">
+                              {tx.type}
+                            </span>
+                            <span className="text-[11px] font-medium text-gray-400">{formattedDate}</span>
+                          </div>
+                          <div className="flex flex-col items-end">
+                            <span
+                              className={`text-xs font-bold ${
+                                isPositive ? "text-emerald-600" : "text-gray-900"
+                              }`}
+                            >
+                              {isPositive ? `+${tx.amount.toLocaleString()}` : tx.amount.toLocaleString()}
+                            </span>
+                            <span className="text-[11px] font-medium text-gray-400">
+                              Balance: {tx.balanceAfter?.toLocaleString() ?? "—"}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
                 </div>
               </div>
 

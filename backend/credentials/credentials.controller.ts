@@ -57,3 +57,38 @@ export const savecredentialsController = async (
     });
   }
 };
+
+export const deleteCredentialController = async (
+  req: Request,
+  res: Response,
+) => {
+  try {
+    const userId = getUserId(req);
+
+    if (!userId) {
+      return res.status(400).json({
+        message: "User Not found",
+      });
+    }
+
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+
+    if (!id) {
+      return res.status(400).json({
+        message: "Credential ID is required",
+      });
+    }
+
+    await workflowService.remove(userId, id);
+
+    return res.status(200).json({
+      message: "Credential deleted successfully",
+    });
+  } catch (error) {
+    return res.status(400).json({
+      message:
+        error instanceof Error ? error.message : "Failed to delete credential",
+    });
+  }
+};
+

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   Plus,
@@ -16,6 +16,8 @@ import {
   Play,
 } from "@phosphor-icons/react";
 import CreateWorkflowModal from "../Workflowpage/components/CreateWorkflowModal";
+import { getBalance } from "@/api/billing.api";
+import { getCredentials } from "@/api/credentials.api";
 
 const ANALYTICS_DATA: Record<
   string,
@@ -63,6 +65,33 @@ export default function Home() {
   const [timeFilter, setTimeFilter] = useState<"Today" | "7 Days" | "30 Days">("7 Days");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<{ name: string; description: string } | null>(null);
+
+  const [creditBalance, setCreditBalance] = useState<number>(0);
+  const [connections, setConnections] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchHomeCards = async () => {
+      try {
+        const balRes = await getBalance();
+        if (typeof balRes?.balance === "number") {
+          setCreditBalance(balRes.balance);
+        }
+      } catch (err) {
+        console.error("Failed to load balance", err);
+      }
+
+      try {
+        const credRes = await getCredentials();
+        if (credRes?.credentials && Array.isArray(credRes.credentials)) {
+          setConnections(credRes.credentials);
+        }
+      } catch (err) {
+        console.error("Failed to load credentials", err);
+      }
+    };
+
+    fetchHomeCards();
+  }, []);
 
   const currentAnalytics = ANALYTICS_DATA[timeFilter] || ANALYTICS_DATA["7 Days"];
 
@@ -312,13 +341,20 @@ export default function Home() {
 
                   <div className="flex items-baseline justify-between mt-2 mb-3">
                     <div>
-                      <span className="text-3xl font-bold text-gray-900 font-sans tracking-tight">649</span>
-                      <span className="text-xs text-gray-500 ml-1.5 font-medium">/ 1,000 available credits</span>
+                      <span className="text-3xl font-bold text-gray-900 font-sans tracking-tight">
+                        {creditBalance.toLocaleString()}
+                      </span>
+                      <span className="text-xs text-gray-500 ml-1.5 font-medium">available credits</span>
                     </div>
                   </div>
 
                   <div className="w-full h-2.5 bg-gray-100 rounded-full overflow-hidden mb-3">
-                    <div className="h-full bg-blue-600 rounded-full transition-all duration-500" style={{ width: "34%" }} />
+                    <div
+                      className="h-full bg-blue-600 rounded-full transition-all duration-500"
+                      style={{
+                        width: `${Math.min(100, Math.max(0, (creditBalance / 1000) * 100))}%`,
+                      }}
+                    />
                   </div>
 
                   <p className="text-xs text-gray-500">
@@ -327,7 +363,7 @@ export default function Home() {
                 </div>
 
                 <div className="z-10 relative pt-4 mt-4 border-t border-gray-100 flex items-center justify-between">
-                  <span className="text-xs text-gray-400">Renews Oct 31, 2026</span>
+                  <span className="text-xs text-gray-400">Renews monthly</span>
                   <Link
                     href="/billing"
                     className="text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1"
@@ -357,25 +393,34 @@ export default function Home() {
                     </Link>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3 mt-3">
-                    {[
-                      { name: "OpenAI", status: "Active" },
-                      { name: "Stripe", status: "Active" },
-                      { name: "GitHub", status: "Active" },
-                      { name: "Slack", status: "Active" },
-                    ].map((item) => (
-                      <div
-                        key={item.name}
-                        className="flex items-center justify-between p-3 rounded-xl bg-gray-50/70 border border-gray-200/60 hover:border-blue-200 transition-colors"
+                  {connections.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-6 text-center">
+                      <span className="text-xs text-gray-400 mb-2">No active connections yet</span>
+                      <Link
+                        href="/credentials"
+                        className="text-xs font-semibold text-blue-600 hover:underline"
                       >
-                        <span className="text-xs font-semibold text-gray-800">{item.name}</span>
-                        <div className="flex items-center gap-1 text-[11px] text-emerald-600 font-medium">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                          <span>{item.status}</span>
+                        + Add Credential
+                      </Link>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-3 mt-3">
+                      {connections.slice(0, 4).map((item) => (
+                        <div
+                          key={item.id}
+                          className="flex items-center justify-between p-3 rounded-xl bg-gray-50/70 border border-gray-200/60 hover:border-blue-200 transition-colors"
+                        >
+                          <span className="text-xs font-semibold text-gray-800 truncate mr-1">
+                            {item.name || item.type}
+                          </span>
+                          <div className="flex items-center gap-1 text-[11px] text-emerald-600 font-medium shrink-0">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                            <span>Active</span>
+                          </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
 

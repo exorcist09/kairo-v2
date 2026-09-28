@@ -13,13 +13,13 @@ import {
   ArrowRight,
   Info,
 } from "@phosphor-icons/react";
-import AvatarSelector from "@/shared/AvatarSelector";
+import AvatarSelector, { getAvatarLabel } from "@/shared/AvatarSelector";
 import { register, login } from "@/api/auth.api";
 import { setAuthToken } from "@/utils/auth";
 
 export default function Register() {
   const [showPassword, setShowPassword] = useState(false);
-  const [avatar, setAvatar] = useState("/avatar/avatar1.jpg");
+  const [avatar, setAvatar] = useState("Astronaut");
   const [username, setUsername] = useState("");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -31,7 +31,7 @@ export default function Register() {
     if (!agreedToTerms) return;
     try {
       const data = await register({
-        avatar,
+        avatar: getAvatarLabel(avatar),
         username,
         name,
         email,
@@ -93,7 +93,7 @@ export default function Register() {
 
           {/* Avatar Horizontal Carousel Selector (Increased vertical/horizontal area without clipping) */}
           <div className="mb-8 pt-2 pb-4 border-y border-gray-100/90 w-full overflow-visible">
-            <AvatarSelector selectedAvatar={avatar} onSelect={setAvatar} />
+            <AvatarSelector selectedAvatar={avatar} onSelect={(_src, label) => setAvatar(label)} />
           </div>
 
           {/* Registration Form */}

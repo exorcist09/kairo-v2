@@ -7,6 +7,7 @@ import { House, Path, Key, CreditCard, Gear, SignOut, Bell } from "@phosphor-ico
 import { useState, useEffect } from "react";
 import LogoutModal from "./LogoutModal";
 import { useAuthStore } from "@/zusstore/auth.store";
+import { getAvatarSrc } from "./AvatarSelector";
 
 const NAV_ITEMS = [
   { name: "Home", href: "/home", icon: House },
@@ -72,7 +73,7 @@ export default function Sidebar() {
 
         {/* Bottom Section */}
         <div className="px-4 flex flex-col gap-2">
-          {/* Notifications Button/Link */}
+          {/* Notifications Button/Link - Commented out for future use
           <Link
             href="/notifications"
             className={`flex items-center px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all group ${
@@ -93,12 +94,13 @@ export default function Sidebar() {
               <span>Notifications</span>
             </div>
           </Link>
+          */}
 
           {/* User Info - Strictly Non-Clickable as requested */}
           <div className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl select-none bg-white/50 border border-gray-200/60 shadow-xs cursor-default">
             <div className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0 border border-gray-200 bg-gray-100 shadow-xs">
               <Image
-                src={user?.avatar || "/avatar/avatar1.jpg"}
+                src={getAvatarSrc(user?.avatar)}
                 alt={user?.name || "User"}
                 width={36}
                 height={36}

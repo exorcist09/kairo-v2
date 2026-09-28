@@ -24,11 +24,18 @@ export const updateEmail = async (data: { email: string }) => {
   return response.data;
 };
 
+export const updateAvatar = async (data: { avatar: string }) => {
+  const response = await axiosInstance.patch("/updateavatar", data);
+
+  return response.data;
+};
+
 export const updatePassword = async (data: {
   currentPassword: string;
   newPassword: string;
 }) => {
-  const response = await axiosInstance.patch("/updatepassword", data);
+  const response = await axiosInstance.put("/updatepassword", data);
 
   return response.data;
 };
+

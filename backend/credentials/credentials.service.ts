@@ -26,3 +26,10 @@ export const save = async (
     name: saving.name,
   };
 };
+
+export const remove = async (userId: string, id: string) => {
+  return await prisma.credential.deleteMany({
+    where: { id, userId },
+  });
+};
+

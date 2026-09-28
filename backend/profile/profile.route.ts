@@ -10,6 +10,11 @@ profileRouter.patch(
   ProfileController.updateProfileController,
 );
 
+profileRouter.patch(
+  "/updateavatar",
+  ProfileController.updateAvatarController,
+);
+
 profileRouter.patch("/updateemail", ProfileController.updateEmail);
 
 profileRouter.put("/updatepassword", ProfileController.updatePassword);

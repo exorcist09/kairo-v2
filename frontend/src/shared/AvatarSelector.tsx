@@ -12,9 +12,33 @@ export const AVATAR_OPTIONS = [
   { id: "avatar5", src: "/avatar/avatar5.jpg", alt: "Avatar 5", label: "Pilot" },
 ];
 
+export const getAvatarSrc = (labelOrSrc?: string): string => {
+  if (!labelOrSrc) return AVATAR_OPTIONS[0].src;
+  const match = AVATAR_OPTIONS.find(
+    (a) =>
+      a.label.toLowerCase() === labelOrSrc.toLowerCase() ||
+      a.id.toLowerCase() === labelOrSrc.toLowerCase() ||
+      a.src.toLowerCase() === labelOrSrc.toLowerCase(),
+  );
+  if (match) return match.src;
+  if (labelOrSrc.startsWith("/")) return labelOrSrc;
+  return AVATAR_OPTIONS[0].src;
+};
+
+export const getAvatarLabel = (labelOrSrc?: string): string => {
+  if (!labelOrSrc) return AVATAR_OPTIONS[0].label;
+  const match = AVATAR_OPTIONS.find(
+    (a) =>
+      a.src.toLowerCase() === labelOrSrc.toLowerCase() ||
+      a.label.toLowerCase() === labelOrSrc.toLowerCase() ||
+      a.id.toLowerCase() === labelOrSrc.toLowerCase(),
+  );
+  return match ? match.label : "Astronaut";
+};
+
 interface AvatarSelectorProps {
   selectedAvatar: string;
-  onSelect: (avatarSrc: string) => void;
+  onSelect: (avatarSrc: string, avatarLabel: string) => void;
   className?: string;
 }
 
@@ -43,7 +67,12 @@ export default function AvatarSelector({
 
   const selectedIndex = Math.max(
     0,
-    AVATAR_OPTIONS.findIndex((a) => a.src === selectedAvatar)
+    AVATAR_OPTIONS.findIndex(
+      (a) =>
+        a.src === selectedAvatar ||
+        a.label.toLowerCase() === selectedAvatar?.toLowerCase() ||
+        a.id.toLowerCase() === selectedAvatar?.toLowerCase(),
+    ),
   );
 
   useEffect(() => {
@@ -52,12 +81,14 @@ export default function AvatarSelector({
 
   const handlePrev = () => {
     const nextIndex = selectedIndex > 0 ? selectedIndex - 1 : AVATAR_OPTIONS.length - 1;
-    onSelect(AVATAR_OPTIONS[nextIndex].src);
+    const item = AVATAR_OPTIONS[nextIndex];
+    onSelect(item.src, item.label);
   };
 
   const handleNext = () => {
     const nextIndex = selectedIndex < AVATAR_OPTIONS.length - 1 ? selectedIndex + 1 : 0;
-    onSelect(AVATAR_OPTIONS[nextIndex].src);
+    const item = AVATAR_OPTIONS[nextIndex];
+    onSelect(item.src, item.label);
   };
 
   return (
@@ -85,7 +116,10 @@ export default function AvatarSelector({
           style={{ scrollbarWidth: "none" }}
         >
           {AVATAR_OPTIONS.map((avatar, idx) => {
-            const isSelected = avatar.src === selectedAvatar;
+            const isSelected =
+              avatar.src === selectedAvatar ||
+              avatar.label.toLowerCase() === selectedAvatar?.toLowerCase() ||
+              avatar.id.toLowerCase() === selectedAvatar?.toLowerCase();
 
             return (
               <button
@@ -94,7 +128,7 @@ export default function AvatarSelector({
                   itemRefs.current[idx] = el;
                 }}
                 type="button"
-                onClick={() => onSelect(avatar.src)}
+                onClick={() => onSelect(avatar.src, avatar.label)}
                 className={`group relative flex-shrink-0 aspect-square rounded-full transition-all duration-300 ease-out snap-center focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 cursor-pointer ${
                   isSelected
                     ? "w-18 h-18 sm:w-22 sm:h-22 scale-110 ring-4 ring-blue-600 ring-offset-4 ring-offset-white shadow-xl z-10"

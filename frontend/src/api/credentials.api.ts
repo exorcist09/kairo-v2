@@ -13,7 +13,14 @@ export const getCredentials = async () => {
 };
 
 export const saveCredentials = async (data: CredentialData) => {
-  const response = await axiosInstance.post("/credentials/save");
+  const response = await axiosInstance.post("/credentials/save", data);
 
   return response.data;
 };
+
+export const deleteCredential = async (id: string) => {
+  const response = await axiosInstance.delete(`/credentials/${id}`);
+
+  return response.data;
+};
+

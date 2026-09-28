@@ -12,6 +12,30 @@ export const profile = async (userId: string) => {
   return user;
 };
 
+export const updateAvatar = async (userId: string, avatar: string) => {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+  });
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  const updatedUser = await prisma.user.update({
+    where: { id: userId },
+    data: { avatar },
+  });
+
+  return {
+    id: updatedUser.id,
+    avatar: updatedUser.avatar,
+    username: updatedUser.username,
+    name: updatedUser.name,
+    email: updatedUser.email,
+    phone: updatedUser.phone,
+    country: updatedUser.country,
+  };
+};
+
 export const updateProfile = async (
   userId: string,
   data: { name?: string; country?: string; phone?: string },

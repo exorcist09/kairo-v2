@@ -7,7 +7,7 @@ const PROTECTED_ROUTES = [
   "/credentials",
   "/billing",
   "/settings",
-  "/notifications",
+  // "/notifications", // Commented out for now
   "/editor",
   "/payment",
 ];

@@ -41,6 +41,41 @@ export const profileController = async (req: Request, res: Response) => {
   }
 };
 
+export const updateAvatarController = async (req: Request, res: Response) => {
+  try {
+    const token = req.headers.authorization?.split(" ")[1];
+
+    if (!token) {
+      return res.status(401).json({
+        message: "Token not found",
+      });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
+      id: string;
+    };
+
+    const { avatar } = req.body;
+
+    if (!avatar) {
+      return res.status(400).json({
+        message: "Avatar is required",
+      });
+    }
+
+    const result = await profileService.updateAvatar(decoded.id, avatar);
+
+    return res.status(200).json({
+      message: "Avatar updated successfully",
+      user: result,
+    });
+  } catch (error) {
+    return res.status(400).json({
+      message:
+        error instanceof Error ? error.message : "Failed to update avatar",
+    });
+  }
+};
 
 export const updateProfileController = async (req: Request, res: Response) => {
 

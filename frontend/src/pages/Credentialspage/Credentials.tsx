@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Key,
   Plus,
@@ -9,6 +9,11 @@ import {
   EyeClosed,
   Trash,
 } from "@phosphor-icons/react";
+import {
+  getCredentials,
+  saveCredentials,
+  deleteCredential,
+} from "@/api/credentials.api";
 
 interface CredentialItem {
   id: string;
@@ -27,67 +32,67 @@ const PROVIDER_OPTIONS = [
   { value: "Google Form", label: "Google Form", placeholder: "1FAIpQLSc••••••••••••••••" },
 ];
 
-const INITIAL_CREDENTIALS: CredentialItem[] = [
-  {
-    id: "cred-openai",
-    name: "OpenAI Production Key",
-    provider: "OpenAI",
-    value: "sk-proj-a98Fk2091mKLa98172bvc891240182",
-    createdAt: "2 days ago",
-  },
-  {
-    id: "cred-gemini",
-    name: "Gemini API Secret",
-    provider: "Google Gemini",
-    value: "AIzaSyD83921049182309124kLmNpQrStU",
-    createdAt: "3 days ago",
-  },
-  {
-    id: "cred-slack",
-    name: "Slack Bot Token",
-    provider: "Slack",
-    value: "xoxb-9182309182-1928301928371-aBcDeF",
-    createdAt: "1 week ago",
-  },
-  {
-    id: "cred-email",
-    name: "Email SMTP Secret",
-    provider: "Email",
-    value: "smtp_live_9812739018239012389102",
-    createdAt: "1 week ago",
-  },
-  {
-    id: "cred-postgres",
-    name: "Production PostgreSQL",
-    provider: "PostgreSQL",
-    value: "postgresql://kairo_admin:P@ssw0rd99@db.kairo.dev:5432/main",
-    createdAt: "2 weeks ago",
-  },
-  {
-    id: "cred-google-form",
-    name: "Google Form Access Key",
-    provider: "Google Form",
-    value: "1FAIpQLSc837192847192849182039182",
-    createdAt: "3 weeks ago",
-  },
-];
-
 function maskKey(val: string) {
   if (!val) return "••••••••••••••••";
   if (val.length <= 8) return "••••••••••••••••";
   return val.slice(0, 4) + "••••••••••••" + val.slice(-4);
 }
 
+function formatDate(dateStr?: string) {
+  if (!dateStr) return "Recently";
+  try {
+    const d = new Date(dateStr);
+    return d.toLocaleDateString(undefined, {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  } catch {
+    return dateStr;
+  }
+}
+
 export default function Credentials() {
-  const [credentials, setCredentials] = useState<CredentialItem[]>(INITIAL_CREDENTIALS);
+  const [credentials, setCredentials] = useState<CredentialItem[]>([]);
+  const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [revealedIds, setRevealedIds] = useState<Set<string>>(new Set());
+  const [submitting, setSubmitting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
 
   // Form State
   const [name, setName] = useState("");
   const [provider, setProvider] = useState("OpenAI");
   const [secretKey, setSecretKey] = useState("");
   const [showModalSecret, setShowModalSecret] = useState(false);
+
+  const fetchCreds = async () => {
+    try {
+      setLoading(true);
+      const res = await getCredentials();
+      if (res?.credentials && Array.isArray(res.credentials)) {
+        const mapped = res.credentials.map((c: any) => ({
+          id: c.id,
+          name: c.name,
+          provider: c.type || "OpenAI",
+          value: c.value,
+          createdAt: formatDate(c.createdAt),
+        }));
+        setCredentials(mapped);
+      } else {
+        setCredentials([]);
+      }
+    } catch (err) {
+      console.error("Failed to fetch credentials", err);
+      setCredentials([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCreds();
+  }, []);
 
   const toggleReveal = (id: string) => {
     setRevealedIds((prev) => {
@@ -101,35 +106,48 @@ export default function Credentials() {
     });
   };
 
-  const handleCreate = (e: React.FormEvent) => {
+  const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !secretKey.trim()) return;
 
-    const newCred: CredentialItem = {
-      id: `cred-${Date.now()}`,
-      name: name.trim(),
-      provider,
-      value: secretKey.trim(),
-      createdAt: "Just now",
-    };
+    try {
+      setSubmitting(true);
+      setErrorMsg("");
+      await saveCredentials({
+        type: provider,
+        name: name.trim(),
+        value: secretKey.trim(),
+      });
 
-    setCredentials([newCred, ...credentials]);
-    setName("");
-    setSecretKey("");
-    setShowModalSecret(false);
-    setIsModalOpen(false);
+      setName("");
+      setSecretKey("");
+      setShowModalSecret(false);
+      setIsModalOpen(false);
+      await fetchCreds();
+    } catch (err: any) {
+      setErrorMsg(err.response?.data?.message || "Failed to save credential");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  const handleDelete = (id: string) => {
-    setCredentials((prev) => prev.filter((c) => c.id !== id));
-    setRevealedIds((prev) => {
-      const next = new Set(prev);
-      next.delete(id);
-      return next;
-    });
+  const handleDelete = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this credential?")) return;
+    try {
+      await deleteCredential(id);
+      setCredentials((prev) => prev.filter((c) => c.id !== id));
+      setRevealedIds((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+    } catch (err) {
+      console.error("Failed to delete credential", err);
+    }
   };
 
-  const currentProviderObj = PROVIDER_OPTIONS.find((p) => p.value === provider) || PROVIDER_OPTIONS[0];
+  const currentProviderObj =
+    PROVIDER_OPTIONS.find((p) => p.value === provider) || PROVIDER_OPTIONS[0];
 
   return (
     <div className="w-full h-full flex flex-col">
@@ -138,16 +156,17 @@ export default function Credentials() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Credentials</h1>
           <p className="text-xs text-gray-500 mt-0.5">
-            Manage encrypted access keys, tokens, and secrets for your integrations.
+            Store and manage secure credentials and tokens for workflows and integrations.
           </p>
         </div>
 
         <button
           type="button"
           onClick={() => {
-            setName("");
+            setName("OpenAI Key");
             setSecretKey("");
             setProvider("OpenAI");
+            setErrorMsg("");
             setShowModalSecret(false);
             setIsModalOpen(true);
           }}
@@ -160,8 +179,12 @@ export default function Credentials() {
 
       {/* Main Container */}
       <div className="flex-1 border border-gray-200 rounded-2xl bg-white overflow-hidden flex flex-col">
-        {credentials.length === 0 ? (
-          /* Empty State (Without Supported Integrations) */
+        {loading ? (
+          <div className="flex-1 flex items-center justify-center">
+            <span className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : credentials.length === 0 ? (
+          /* Empty State */
           <div className="flex-1 flex flex-col items-center justify-center p-8 sm:p-12 text-center max-w-lg mx-auto">
             {/* Visual Icon Badge */}
             <div className="relative mb-6">
@@ -180,7 +203,14 @@ export default function Credentials() {
             {/* Primary Action Button */}
             <button
               type="button"
-              onClick={() => setIsModalOpen(true)}
+              onClick={() => {
+                setName("OpenAI Key");
+                setSecretKey("");
+                setProvider("OpenAI");
+                setErrorMsg("");
+                setShowModalSecret(false);
+                setIsModalOpen(true);
+              }}
               className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-6 py-3 rounded-xl transition-all shadow-xs hover:shadow-md cursor-pointer"
             >
               <Plus weight="bold" className="w-4 h-4" />
@@ -188,7 +218,7 @@ export default function Credentials() {
             </button>
           </div>
         ) : (
-          /* Credentials List (Shows dummy state for each provider) */
+          /* Credentials List */
           <div className="flex-1 overflow-y-auto no-scrollbar p-6 flex flex-col gap-3">
             {credentials.map((item) => {
               const isRevealed = revealedIds.has(item.id);
@@ -278,7 +308,7 @@ export default function Credentials() {
 
             {/* Form */}
             <form onSubmit={handleCreate} className="flex flex-col gap-4">
-              {/* Provider Selection (Filtered by NodeType: OpenAI, Gemini, Slack, Email, PostgreSQL, Google Form) */}
+              {/* Provider Selection */}
               <div className="flex flex-col gap-1.5">
                 <label className="text-xs font-semibold uppercase tracking-wider text-gray-700">
                   Service / Integration
@@ -350,6 +380,10 @@ export default function Credentials() {
                 </p>
               </div>
 
+              {errorMsg && (
+                <p className="text-xs text-red-600 font-semibold">{errorMsg}</p>
+              )}
+
               {/* Modal Buttons */}
               <div className="grid grid-cols-2 gap-3 w-full pt-3">
                 <button
@@ -361,10 +395,10 @@ export default function Credentials() {
                 </button>
                 <button
                   type="submit"
-                  disabled={!name.trim() || !secretKey.trim()}
+                  disabled={submitting || !name.trim() || !secretKey.trim()}
                   className="w-full py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-semibold transition-colors shadow-xs flex items-center justify-center gap-2 cursor-pointer"
                 >
-                  Save Credential
+                  {submitting ? "Saving..." : "Save Credential"}
                 </button>
               </div>
             </form>

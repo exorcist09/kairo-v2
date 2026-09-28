@@ -10,4 +10,10 @@ credentialsRouter.post(
   credentialsController.savecredentialsController,
 );
 
+credentialsRouter.delete(
+  "/:id",
+  credentialsController.deleteCredentialController,
+);
+
 export default credentialsRouter;
+
