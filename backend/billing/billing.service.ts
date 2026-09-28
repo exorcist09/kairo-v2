@@ -14,13 +14,27 @@ export const getPlans = async () => {
 export const getBalance = async (userId: string) => {
   const user = await prisma.user.findUnique({
     where: { id: userId },
+    include: {
+      creditPurchase: {
+        where: { status: "SUCCESS" },
+        orderBy: { createdAt: "desc" },
+        take: 1,
+        include: { creditPlan: true },
+      },
+    },
   });
 
   if (!user) {
     throw new Error("User not found");
   }
 
-  return user.creditBalance;
+  const latestPurchase = user.creditPurchase[0];
+  const plan = latestPurchase?.creditPlan?.type || "FREE_TIER";
+
+  return {
+    balance: user.creditBalance,
+    plan,
+  };
 };
 
 export const getHistory = async (userId: string) => {

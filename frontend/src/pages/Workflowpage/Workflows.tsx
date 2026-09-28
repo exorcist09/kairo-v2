@@ -15,19 +15,9 @@ import {
   WarningCircle,
 } from "@phosphor-icons/react";
 import CreateWorkflowModal from "./components/CreateWorkflowModal";
-import {
-  getallWorkflow,
-  saveWorkflow,
-  deleteWorkflow,
-} from "@/api/workflow.api";
-
-type Workflow = {
-  id: string;
-  name: string;
-  description?: string;
-  status: "draft" | "ongoing" | "completed" | "failed";
-  updatedAt: string;
-};
+import { saveWorkflow } from "@/api/workflow.api";
+import { useWorkflowStore, WorkflowItem } from "@/zusstore/workflow.store";
+import { WorkflowListSkeleton } from "@/shared/Skeleton";
 
 const TABS = [
   { key: "all", label: "All" },
@@ -38,23 +28,10 @@ const TABS = [
 
 type TabKey = (typeof TABS)[number]["key"];
 
-function formatDate(dateStr?: string) {
-  if (!dateStr) return "Recently";
-  try {
-    const d = new Date(dateStr);
-    return d.toLocaleDateString(undefined, {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
-  } catch {
-    return dateStr;
-  }
-}
-
 export default function Workflows() {
-  const [workflows, setWorkflows] = useState<Workflow[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { workflows, loading, hasLoaded, fetchWorkflows, deleteWorkflow } =
+    useWorkflowStore();
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState<TabKey>("all");
@@ -66,30 +43,9 @@ export default function Workflows() {
     width: 0,
   });
 
-  const fetchWorkflows = async () => {
-    try {
-      setLoading(true);
-      const res = await getallWorkflow();
-      const list = res?.result?.workflows || [];
-      const mapped: Workflow[] = list.map((w: any) => ({
-        id: w.id,
-        name: w.workflowName,
-        description: w.workflowDescription || "",
-        status: (w.workflowStatus?.toLowerCase() || "draft") as Workflow["status"],
-        updatedAt: formatDate(w.updatedAt),
-      }));
-      setWorkflows(mapped);
-    } catch (err) {
-      console.error("Failed to load workflows", err);
-      setWorkflows([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
     fetchWorkflows();
-  }, []);
+  }, [fetchWorkflows]);
 
   useEffect(() => {
     const activeEl = tabRefs.current[activeTab];
@@ -116,7 +72,6 @@ export default function Workflows() {
     if (!confirm("Are you sure you want to delete this workflow?")) return;
     try {
       await deleteWorkflow(id);
-      setWorkflows((prev) => prev.filter((w) => w.id !== id));
     } catch (err) {
       console.error("Failed to delete workflow", err);
     }
@@ -124,22 +79,20 @@ export default function Workflows() {
 
   const handleCreate = async (name: string, description: string) => {
     try {
-      const res = await saveWorkflow({
+      await saveWorkflow({
         workflowName: name,
         workflowDescription: description,
       });
       setIsModalOpen(false);
-      await fetchWorkflows();
-      if (res?.workflow?.id) {
-        window.location.href = `/editor/${res.workflow.id}`;
-      }
+      await fetchWorkflows(true);
+      // Notice: Do NOT open editor directly; stays on workflows list so user clicks Open Editor
     } catch (err) {
       console.error("Failed to create workflow", err);
     }
   };
 
   // Status icons
-  const getWorkflowIcon = (status: Workflow["status"]) => {
+  const getWorkflowIcon = (status: WorkflowItem["status"]) => {
     switch (status) {
       case "ongoing":
         return (
@@ -225,7 +178,7 @@ export default function Workflows() {
             })}
           </div>
 
-          {/* Search Input */}
+          {/* Search Input: text color strictly black */}
           <div className="relative w-full sm:w-64">
             <MagnifyingGlass className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
@@ -233,7 +186,7 @@ export default function Workflows() {
               placeholder="Search workflows..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-8 py-2 rounded-xl border border-gray-200 text-xs bg-gray-50/50 hover:bg-white focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+              className="w-full pl-9 pr-8 py-2 rounded-xl border border-gray-200 text-xs text-black placeholder:text-gray-400 bg-gray-50/50 hover:bg-white focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
             />
             {searchQuery && (
               <button
@@ -249,39 +202,65 @@ export default function Workflows() {
 
         {/* Content Area */}
         <div className="flex-1 overflow-y-auto no-scrollbar p-4 sm:p-6">
-          {loading ? (
-            <div className="h-64 flex items-center justify-center">
-              <span className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-            </div>
+          {loading && !hasLoaded ? (
+            <WorkflowListSkeleton />
           ) : filteredWorkflows.length === 0 ? (
-            /* Empty State */
-            <div className="h-full min-h-[300px] flex flex-col items-center justify-center text-center p-6 max-w-sm mx-auto">
-              <div className="w-14 h-14 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 mb-4 shadow-2xs">
-                <Path weight="duotone" className="w-7 h-7" />
+            /* Context-Specific Empty States */
+            workflows.length === 0 ? (
+              /* Case 1: No workflows created at all -> Show empty state WITH Add New Workflow button */
+              <div className="h-full min-h-[300px] flex flex-col items-center justify-center text-center p-6 max-w-sm mx-auto">
+                <div className="w-14 h-14 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 mb-4 shadow-2xs">
+                  <Path weight="duotone" className="w-7 h-7" />
+                </div>
+                <h3 className="text-sm font-bold text-gray-900 mb-1">
+                  No workflows yet
+                </h3>
+                <p className="text-xs text-gray-500 mb-5">
+                  Create your first automation workflow to start executing tasks.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(true)}
+                  className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-5 py-2.5 rounded-xl transition-all shadow-xs cursor-pointer"
+                >
+                  <Plus weight="bold" className="w-4 h-4" />
+                  <span>Create Workflow</span>
+                </button>
               </div>
-              <h3 className="text-sm font-bold text-gray-900 mb-1">
-                {searchQuery || activeTab !== "all"
-                  ? "No workflows found"
-                  : "No workflows yet"}
-              </h3>
-              <p className="text-xs text-gray-500 mb-5">
-                {searchQuery || activeTab !== "all"
-                  ? "Try changing your search term or tab filter."
-                  : "Create your first automation workflow to start executing tasks."}
-              </p>
-              <button
-                type="button"
-                onClick={() => {
-                  setSearchQuery("");
-                  setActiveTab("all");
-                  setIsModalOpen(true);
-                }}
-                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-5 py-2.5 rounded-xl transition-all shadow-xs cursor-pointer"
-              >
-                <Plus weight="bold" className="w-4 h-4" />
-                <span>Create Workflow</span>
-              </button>
-            </div>
+            ) : searchQuery ? (
+              /* Case 2: Search with no results -> NO Add New Workflow button */
+              <div className="h-full min-h-[300px] flex flex-col items-center justify-center text-center p-6 max-w-sm mx-auto">
+                <div className="w-14 h-14 rounded-2xl bg-gray-50 border border-gray-200 flex items-center justify-center text-gray-400 mb-4 shadow-2xs">
+                  <MagnifyingGlass weight="duotone" className="w-7 h-7" />
+                </div>
+                <h3 className="text-sm font-bold text-gray-900 mb-1">
+                  No workflows found
+                </h3>
+                <p className="text-xs text-gray-500 mb-4">
+                  No workflows match &ldquo;{searchQuery}&rdquo;. Try another search term.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery("")}
+                  className="text-xs font-semibold text-blue-600 hover:text-blue-700 hover:underline cursor-pointer"
+                >
+                  Clear search
+                </button>
+              </div>
+            ) : (
+              /* Case 3: Tab has no items -> Empty state for that tab WITHOUT Add New Workflow button */
+              <div className="h-full min-h-[300px] flex flex-col items-center justify-center text-center p-6 max-w-sm mx-auto">
+                <div className="w-14 h-14 rounded-2xl bg-gray-50 border border-gray-200 flex items-center justify-center text-gray-400 mb-4 shadow-2xs">
+                  <Path weight="duotone" className="w-7 h-7" />
+                </div>
+                <h3 className="text-sm font-bold text-gray-900 mb-1 capitalize">
+                  No {activeTab} workflows
+                </h3>
+                <p className="text-xs text-gray-500">
+                  There are currently no workflows in the {activeTab} status.
+                </p>
+              </div>
+            )
           ) : (
             /* Workflow List */
             <div

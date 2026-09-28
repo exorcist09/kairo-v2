@@ -10,18 +10,10 @@ import {
   Trash,
 } from "@phosphor-icons/react";
 import {
-  getCredentials,
-  saveCredentials,
-  deleteCredential,
-} from "@/api/credentials.api";
-
-interface CredentialItem {
-  id: string;
-  name: string;
-  provider: string;
-  value: string;
-  createdAt: string;
-}
+  useCredentialStore,
+  CredentialItem,
+} from "@/zusstore/credential.store";
+import { CredentialListSkeleton } from "@/shared/Skeleton";
 
 const PROVIDER_OPTIONS = [
   { value: "OpenAI", label: "OpenAI API", placeholder: "sk-proj-••••••••••••••••" },
@@ -53,8 +45,15 @@ function formatDate(dateStr?: string) {
 }
 
 export default function Credentials() {
-  const [credentials, setCredentials] = useState<CredentialItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const {
+    credentials,
+    loading,
+    hasLoaded,
+    fetchCredentials,
+    addCredential,
+    deleteCredential,
+  } = useCredentialStore();
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [revealedIds, setRevealedIds] = useState<Set<string>>(new Set());
   const [submitting, setSubmitting] = useState(false);
@@ -66,33 +65,9 @@ export default function Credentials() {
   const [secretKey, setSecretKey] = useState("");
   const [showModalSecret, setShowModalSecret] = useState(false);
 
-  const fetchCreds = async () => {
-    try {
-      setLoading(true);
-      const res = await getCredentials();
-      if (res?.credentials && Array.isArray(res.credentials)) {
-        const mapped = res.credentials.map((c: any) => ({
-          id: c.id,
-          name: c.name,
-          provider: c.type || "OpenAI",
-          value: c.value,
-          createdAt: formatDate(c.createdAt),
-        }));
-        setCredentials(mapped);
-      } else {
-        setCredentials([]);
-      }
-    } catch (err) {
-      console.error("Failed to fetch credentials", err);
-      setCredentials([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    fetchCreds();
-  }, []);
+    fetchCredentials();
+  }, [fetchCredentials]);
 
   const toggleReveal = (id: string) => {
     setRevealedIds((prev) => {
@@ -113,7 +88,7 @@ export default function Credentials() {
     try {
       setSubmitting(true);
       setErrorMsg("");
-      await saveCredentials({
+      await addCredential({
         type: provider,
         name: name.trim(),
         value: secretKey.trim(),
@@ -123,9 +98,8 @@ export default function Credentials() {
       setSecretKey("");
       setShowModalSecret(false);
       setIsModalOpen(false);
-      await fetchCreds();
     } catch (err: any) {
-      setErrorMsg(err.response?.data?.message || "Failed to save credential");
+      setErrorMsg(err.response?.data?.message || err.message || "Failed to save credential");
     } finally {
       setSubmitting(false);
     }
@@ -135,7 +109,6 @@ export default function Credentials() {
     if (!confirm("Are you sure you want to delete this credential?")) return;
     try {
       await deleteCredential(id);
-      setCredentials((prev) => prev.filter((c) => c.id !== id));
       setRevealedIds((prev) => {
         const next = new Set(prev);
         next.delete(id);
@@ -179,10 +152,8 @@ export default function Credentials() {
 
       {/* Main Container */}
       <div className="flex-1 border border-gray-200 rounded-2xl bg-white overflow-hidden flex flex-col">
-        {loading ? (
-          <div className="flex-1 flex items-center justify-center">
-            <span className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-          </div>
+        {loading && !hasLoaded ? (
+          <CredentialListSkeleton />
         ) : credentials.length === 0 ? (
           /* Empty State */
           <div className="flex-1 flex flex-col items-center justify-center p-8 sm:p-12 text-center max-w-lg mx-auto">
@@ -396,9 +367,12 @@ export default function Credentials() {
                 <button
                   type="submit"
                   disabled={submitting || !name.trim() || !secretKey.trim()}
-                  className="w-full py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-semibold transition-colors shadow-xs flex items-center justify-center gap-2 cursor-pointer"
+                  className="w-full py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold transition-colors shadow-xs flex items-center justify-center gap-2 cursor-pointer"
                 >
-                  {submitting ? "Saving..." : "Save Credential"}
+                  {submitting && (
+                    <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  )}
+                  <span>{submitting ? "Saving..." : "Save Credential"}</span>
                 </button>
               </div>
             </form>

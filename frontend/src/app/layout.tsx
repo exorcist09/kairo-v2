@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Radio_Canada } from "next/font/google";
 import "./globals.css";
+import Providers from "./providers";
 
 const radioCanada = Radio_Canada({
   variable: "--font-radio-canada",
@@ -25,7 +26,10 @@ export default function RootLayout({
       lang="en"
       className={`${radioCanada.variable} ${radioCanada.className} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <Providers>{children}</Providers>
+      </body>
     </html>
   );
 }
+

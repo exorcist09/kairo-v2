@@ -16,8 +16,9 @@ import {
   Play,
 } from "@phosphor-icons/react";
 import CreateWorkflowModal from "../Workflowpage/components/CreateWorkflowModal";
-import { getBalance } from "@/api/billing.api";
-import { getCredentials } from "@/api/credentials.api";
+import { saveWorkflow } from "@/api/workflow.api";
+import { useBillingStore } from "@/zusstore/billing.store";
+import { useCredentialStore } from "@/zusstore/credential.store";
 
 const ANALYTICS_DATA: Record<
   string,
@@ -61,37 +62,34 @@ const TEMPLATES = [
   },
 ];
 
+const formatPlanName = (p?: string) => {
+  switch (p) {
+    case "SMALL":
+      return "Small Pack";
+    case "MEDIUM":
+      return "Medium Pack";
+    case "LARGE":
+      return "Large Pack";
+    case "CUSTOM":
+      return "Custom Plan";
+    case "FREE_TIER":
+    default:
+      return "Free Tier";
+  }
+};
+
 export default function Home() {
   const [timeFilter, setTimeFilter] = useState<"Today" | "7 Days" | "30 Days">("7 Days");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<{ name: string; description: string } | null>(null);
 
-  const [creditBalance, setCreditBalance] = useState<number>(0);
-  const [connections, setConnections] = useState<any[]>([]);
+  const { balance: creditBalance, plan: userPlan, fetchBillingData } = useBillingStore();
+  const { credentials: connections, fetchCredentials } = useCredentialStore();
 
   useEffect(() => {
-    const fetchHomeCards = async () => {
-      try {
-        const balRes = await getBalance();
-        if (typeof balRes?.balance === "number") {
-          setCreditBalance(balRes.balance);
-        }
-      } catch (err) {
-        console.error("Failed to load balance", err);
-      }
-
-      try {
-        const credRes = await getCredentials();
-        if (credRes?.credentials && Array.isArray(credRes.credentials)) {
-          setConnections(credRes.credentials);
-        }
-      } catch (err) {
-        console.error("Failed to load credentials", err);
-      }
-    };
-
-    fetchHomeCards();
-  }, []);
+    fetchBillingData();
+    fetchCredentials();
+  }, [fetchBillingData, fetchCredentials]);
 
   const currentAnalytics = ANALYTICS_DATA[timeFilter] || ANALYTICS_DATA["7 Days"];
 
@@ -335,7 +333,7 @@ export default function Home() {
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-base font-bold text-gray-900">Plan</h3>
                     <span className="text-xs font-bold text-blue-600 bg-blue-50 border border-blue-200/60 px-2.5 py-1 rounded-full">
-                      Starter Plan
+                      {formatPlanName(userPlan)}
                     </span>
                   </div>
 
@@ -411,7 +409,7 @@ export default function Home() {
                           className="flex items-center justify-between p-3 rounded-xl bg-gray-50/70 border border-gray-200/60 hover:border-blue-200 transition-colors"
                         >
                           <span className="text-xs font-semibold text-gray-800 truncate mr-1">
-                            {item.name || item.type}
+                            {item.name || item.provider}
                           </span>
                           <div className="flex items-center gap-1 text-[11px] text-emerald-600 font-medium shrink-0">
                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
@@ -480,10 +478,18 @@ export default function Home() {
           setIsModalOpen(false);
           setSelectedTemplate(null);
         }}
-        onCreate={(_name, _description) => {
-          setIsModalOpen(false);
-          setSelectedTemplate(null);
-          window.location.href = "/workflows";
+        onCreate={async (name, description) => {
+          try {
+            await saveWorkflow({
+              workflowName: name,
+              workflowDescription: description,
+            });
+            setIsModalOpen(false);
+            setSelectedTemplate(null);
+            window.location.href = "/workflows";
+          } catch (err) {
+            console.error("Failed to create workflow from template", err);
+          }
         }}
       />
     </div>

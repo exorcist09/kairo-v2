@@ -20,11 +20,12 @@ export const getPlansController = async (req: Request, res: Response) => {
 export const getBalanceController = async (req: Request, res: Response) => {
   try {
     const userId = getUserId(req);
-    const balance = await billingService.getBalance(userId);
+    const result = await billingService.getBalance(userId);
 
     return res.status(200).json({
       message: "Balance Loaded Successfully",
-      balance,
+      balance: result.balance,
+      plan: result.plan,
     });
   } catch (error) {
     return res.status(400).json({
