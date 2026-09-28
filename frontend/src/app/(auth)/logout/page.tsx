@@ -3,8 +3,14 @@
 import Image from "next/image";
 import Link from "next/link";
 import { CheckCircle, ArrowRight } from "@phosphor-icons/react";
+import { useEffect } from "react";
+import { clearAuthToken } from "@/utils/auth";
 
 export default function LogoutPage() {
+  useEffect(() => {
+    clearAuthToken();
+  }, []);
+
   return (
     <div className="min-h-screen w-full bg-white flex flex-col justify-between p-6 sm:p-10 relative">
       {/* Top Left: Kairo Logo with brightness-0 */}

@@ -3,6 +3,8 @@
 import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { SignOut, X } from "@phosphor-icons/react";
+import { logout as apiLogout } from "@/api/auth.api";
+import { clearAuthToken } from "@/utils/auth";
 
 interface LogoutModalProps {
   isOpen: boolean;
@@ -26,7 +28,13 @@ export default function LogoutModal({ isOpen, onClose, onConfirm }: LogoutModalP
 
   if (!isOpen) return null;
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await apiLogout();
+    } catch {
+      // Ignore network errors on logout
+    }
+    clearAuthToken();
     if (onConfirm) {
       onConfirm();
     }

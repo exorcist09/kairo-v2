@@ -11,6 +11,7 @@ import {
   ArrowRight,
 } from "@phosphor-icons/react";
 import { login } from "@/api/auth.api";
+import { setAuthToken } from "@/utils/auth";
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
@@ -26,6 +27,9 @@ export default function Login() {
       });
 
       console.log("Login successful:", data);
+      if (data?.token) {
+        setAuthToken(data.token, data.user);
+      }
       window.location.href = "/home";
     } catch (error: any) {
       console.error(error.response?.data?.message || "Login failed");

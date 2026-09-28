@@ -4,8 +4,9 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { House, Path, Key, CreditCard, Gear, SignOut, Bell } from "@phosphor-icons/react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import LogoutModal from "./LogoutModal";
+import { useAuthStore } from "@/zusstore/auth.store";
 
 const NAV_ITEMS = [
   { name: "Home", href: "/home", icon: House },
@@ -19,6 +20,11 @@ export default function Sidebar() {
   const pathname = usePathname();
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const isNotificationActive = pathname?.startsWith("/notifications");
+  const { user, init } = useAuthStore();
+
+  useEffect(() => {
+    init();
+  }, [init]);
 
   return (
     <>
@@ -92,16 +98,20 @@ export default function Sidebar() {
           <div className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl select-none bg-white/50 border border-gray-200/60 shadow-xs cursor-default">
             <div className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0 border border-gray-200 bg-gray-100 shadow-xs">
               <Image
-                src="/avatar/avatar1.jpg"
-                alt="John Doe"
+                src={user?.avatar || "/avatar/avatar1.jpg"}
+                alt={user?.name || "User"}
                 width={36}
                 height={36}
                 className="w-full h-full object-cover"
               />
             </div>
             <div className="flex flex-col min-w-0">
-              <span className="text-sm font-semibold text-gray-900 truncate">John Doe</span>
-              <span className="text-xs text-gray-500 truncate">john@example.com</span>
+              <span className="text-sm font-semibold text-gray-900 truncate">
+                {user?.name || user?.username || "Account"}
+              </span>
+              <span className="text-xs text-gray-500 truncate">
+                {user?.email || "Signed in"}
+              </span>
             </div>
           </div>
 

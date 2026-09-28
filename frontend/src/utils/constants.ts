@@ -2,6 +2,8 @@ export enum NodeType {
   OPENAI = "OPENAI",
   GEMINI = "GEMINI",
   SLACK = "SLACK",
+  MANUAL_TRIGGER = "MANUAL_TRIGGER",
+  WEBHOOK = "WEBHOOK",
   HTTP_TRIGGER = "HTTP TRIGGER",
   EMAIL = "EMAIL",
   POSTGRES = "POSTGRES",
@@ -10,3 +12,4 @@ export enum NodeType {
   GOOGLE_FORM = "GOOGLE_FORM",
   HTTP_REQUEST = "HTTP_REQUEST",
 }
+

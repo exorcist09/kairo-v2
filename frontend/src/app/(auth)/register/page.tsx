@@ -14,7 +14,8 @@ import {
   Info,
 } from "@phosphor-icons/react";
 import AvatarSelector from "@/shared/AvatarSelector";
-import { register } from "@/api/auth.api";
+import { register, login } from "@/api/auth.api";
+import { setAuthToken } from "@/utils/auth";
 
 export default function Register() {
   const [showPassword, setShowPassword] = useState(false);
@@ -38,12 +39,23 @@ export default function Register() {
       });
       console.log("Registration successful:", data);
 
-      window.location.href = "/home";
+      try {
+        const loginData = await login({ email, password });
+        if (loginData?.token) {
+          setAuthToken(loginData.token, loginData.user);
+          window.location.href = "/home";
+          return;
+        }
+      } catch {
+        // Ignore auto-login error and redirect to login
+      }
+
+      window.location.href = "/login";
     } catch (error: any) {
-  console.error(
-    error.response?.data?.message || "Registration failed"
-  );
-}
+      console.error(
+        error.response?.data?.message || "Registration failed"
+      );
+    }
   };
 
   return (
