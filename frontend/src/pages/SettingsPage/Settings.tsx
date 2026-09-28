@@ -40,8 +40,7 @@ export default function Settings() {
   // Contact Details State
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
+  const [fullName, setFullName] = useState("");
   const [country, setCountry] = useState("IN");
   const [phone, setPhone] = useState("");
   const [profileSaving, setProfileSaving] = useState(false);
@@ -64,7 +63,7 @@ export default function Settings() {
 
   const [isDisableModalOpen, setIsDisableModalOpen] = useState(false);
 
-  const { init } = useAuthStore();
+  const { init, updateUser: updateAuthUser } = useAuthStore();
 
   useEffect(() => {
     fetchProfile();
@@ -77,12 +76,7 @@ export default function Settings() {
       setInitialAvatar(avLabel);
       setUsername(user.username || "");
       setEmail(user.email || "");
-
-      if (user.name) {
-        const parts = user.name.trim().split(" ");
-        setFirstName(parts[0] || "");
-        setLastName(parts.slice(1).join(" ") || "");
-      }
+      setFullName(user.name || "");
       if (user.country) setCountry(user.country);
       if (user.phone) setPhone(user.phone);
     }
@@ -97,6 +91,7 @@ export default function Settings() {
       await updateAvatar({ avatar: label });
       setInitialAvatar(label);
       updateUserFields({ avatar: label });
+      updateAuthUser({ avatar: label });
       setAvatarSavedSuccess(true);
 
       // Sync auth state
@@ -114,17 +109,17 @@ export default function Settings() {
     try {
       setProfileSaving(true);
       setProfileError("");
-      const fullName = `${firstName} ${lastName}`.trim();
       await updateProfile({
-        name: fullName,
+        name: fullName.trim(),
         country,
         phone,
       });
       updateUserFields({
-        name: fullName,
+        name: fullName.trim(),
         country,
         phone,
       });
+      updateAuthUser({ name: fullName.trim() });
       setProfileSavedSuccess(true);
       init();
       setTimeout(() => setProfileSavedSuccess(false), 2500);
@@ -277,26 +272,14 @@ export default function Settings() {
 
                 {/* Form Grid */}
                 <div className="z-10 relative grid grid-cols-1 md:grid-cols-2 gap-5">
-                  {/* First Name */}
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-semibold text-gray-700">First Name</label>
+                  {/* Full Name */}
+                  <div className="flex flex-col gap-1.5 md:col-span-2">
+                    <label className="text-xs font-semibold text-gray-700">Full Name</label>
                     <input
                       type="text"
-                      value={firstName}
-                      onChange={(e) => setFirstName(e.target.value)}
-                      placeholder="First Name"
-                      className="px-3.5 py-2.5 rounded-xl border border-gray-200 bg-gray-50/50 hover:bg-white focus:bg-white text-xs font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
-                    />
-                  </div>
-
-                  {/* Last Name */}
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-semibold text-gray-700">Last Name</label>
-                    <input
-                      type="text"
-                      value={lastName}
-                      onChange={(e) => setLastName(e.target.value)}
-                      placeholder="Last Name"
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      placeholder="e.g. John Doe"
                       className="px-3.5 py-2.5 rounded-xl border border-gray-200 bg-gray-50/50 hover:bg-white focus:bg-white text-xs font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                     />
                   </div>

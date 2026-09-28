@@ -21,9 +21,10 @@ interface AuthState {
   login: (token: string, user?: AuthUser | null) => void;
   logout: () => void;
   init: () => void;
+  updateUser: (fields: Partial<AuthUser>) => void;
 }
 
-export const useAuthStore = create<AuthState>((set) => ({
+export const useAuthStore = create<AuthState>((set, get) => ({
   token: null,
   user: null,
   isAuthenticated: false,
@@ -39,5 +40,14 @@ export const useAuthStore = create<AuthState>((set) => ({
     const token = getAuthToken();
     const user = getStoredUser();
     set({ token, user, isAuthenticated: !!token });
+  },
+  updateUser: (fields: Partial<AuthUser>) => {
+    const current = get().user;
+    if (!current) return;
+    const updated = { ...current, ...fields };
+    if (typeof window !== "undefined") {
+      localStorage.setItem("user", JSON.stringify(updated));
+    }
+    set({ user: updated });
   },
 }));

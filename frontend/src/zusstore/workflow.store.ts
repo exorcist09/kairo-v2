@@ -1,5 +1,9 @@
 import { create } from "zustand";
-import { getallWorkflow, deleteWorkflow as apiDeleteWorkflow } from "@/api/workflow.api";
+import {
+  getallWorkflow,
+  saveWorkflow as apiSaveWorkflow,
+  deleteWorkflow as apiDeleteWorkflow,
+} from "@/api/workflow.api";
 
 export interface WorkflowItem {
   id: string;
@@ -30,6 +34,7 @@ interface WorkflowState {
   hasLoaded: boolean;
   fetchWorkflows: (force?: boolean) => Promise<void>;
   setWorkflows: (workflows: WorkflowItem[]) => void;
+  addWorkflow: (name: string, description: string) => Promise<any>;
   deleteWorkflow: (id: string) => Promise<void>;
 }
 
@@ -41,7 +46,7 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
   fetchWorkflows: async (force = false) => {
     if (get().hasLoaded && !force) return;
     try {
-      set({ loading: true, error: null });
+      set({ loading: !get().hasLoaded, error: null });
       const res = await getallWorkflow();
       const list = res?.result?.workflows || [];
       const mapped: WorkflowItem[] = list.map((w: any) => ({
@@ -57,6 +62,28 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
     }
   },
   setWorkflows: (workflows) => set({ workflows }),
+  addWorkflow: async (name: string, description: string) => {
+    const res = await apiSaveWorkflow({
+      workflowName: name,
+      workflowDescription: description,
+    });
+    if (res?.workflow) {
+      const w = res.workflow;
+      const newItem: WorkflowItem = {
+        id: w.id,
+        name: w.workflowName,
+        description: w.workflowDescription || "",
+        status: (w.workflowStatus?.toLowerCase() || "draft") as WorkflowItem["status"],
+        updatedAt: formatDate(w.updatedAt || new Date().toISOString()),
+      };
+      set((state) => ({
+        workflows: [newItem, ...state.workflows.filter((item) => item.id !== newItem.id)],
+      }));
+    }
+    // Background refresh
+    get().fetchWorkflows(true);
+    return res?.workflow;
+  },
   deleteWorkflow: async (id: string) => {
     await apiDeleteWorkflow(id);
     set((state) => ({

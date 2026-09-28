@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import {
   Coins,
   ChartBar,
@@ -11,6 +11,44 @@ import {
 } from "@phosphor-icons/react";
 import { useBillingStore } from "@/zusstore/billing.store";
 import { BillingSkeleton } from "@/shared/Skeleton";
+
+function useAnimatedCounter(targetValue: number, duration: number = 1000) {
+  const [displayValue, setDisplayValue] = useState(targetValue);
+  const prevValueRef = useRef(targetValue);
+  const [isAnimating, setIsAnimating] = useState(false);
+
+  useEffect(() => {
+    const startValue = prevValueRef.current;
+    if (startValue === targetValue) {
+      setDisplayValue(targetValue);
+      return;
+    }
+
+    prevValueRef.current = targetValue;
+    setIsAnimating(true);
+    const startTime = performance.now();
+
+    const update = (now: number) => {
+      const elapsed = now - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const ease = 1 - Math.pow(1 - progress, 3);
+      const current = Math.round(startValue + (targetValue - startValue) * ease);
+      setDisplayValue(current);
+
+      if (progress < 1) {
+        requestAnimationFrame(update);
+      } else {
+        setDisplayValue(targetValue);
+        setIsAnimating(false);
+      }
+    };
+
+    const handle = requestAnimationFrame(update);
+    return () => cancelAnimationFrame(handle);
+  }, [targetValue, duration]);
+
+  return { displayValue, isAnimating };
+}
 
 const loadRazorpayScript = (): Promise<boolean> => {
   return new Promise((resolve) => {
@@ -46,6 +84,9 @@ export default function Billing() {
     type: "success" | "error" | "info";
     message: string;
   } | null>(null);
+
+  const { displayValue: animatedBalance, isAnimating: isBalanceCounting } =
+    useAnimatedCounter(balance, 1200);
 
   useEffect(() => {
     fetchBillingData();
@@ -337,8 +378,12 @@ export default function Billing() {
               <div className="relative overflow-hidden bg-white rounded-2xl border border-gray-200/90 p-6 md:p-8 shadow-xs flex items-center justify-between flex-shrink-0">
                 <div className="z-10 relative">
                   <h2 className="text-base sm:text-lg font-bold text-gray-900">Available Credits</h2>
-                  <div className="text-5xl font-extrabold text-blue-600 my-2 font-sans tracking-tight">
-                    {balance.toLocaleString()}
+                  <div
+                    className={`text-5xl font-extrabold my-2 font-sans tracking-tight transition-all duration-300 ${
+                      isBalanceCounting ? "text-emerald-600 scale-105" : "text-blue-600"
+                    }`}
+                  >
+                    {animatedBalance.toLocaleString()}
                   </div>
                   <div className="flex items-center gap-3 mt-3 flex-wrap">
                     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/70">

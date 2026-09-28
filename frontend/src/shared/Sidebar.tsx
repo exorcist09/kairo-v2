@@ -7,6 +7,7 @@ import { House, Path, Key, CreditCard, Gear, SignOut, Bell } from "@phosphor-ico
 import { useState, useEffect } from "react";
 import LogoutModal from "./LogoutModal";
 import { useAuthStore } from "@/zusstore/auth.store";
+import { useProfileStore } from "@/zusstore/profile.store";
 import { getAvatarSrc } from "./AvatarSelector";
 
 const NAV_ITEMS = [
@@ -21,11 +22,15 @@ export default function Sidebar() {
   const pathname = usePathname();
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const isNotificationActive = pathname?.startsWith("/notifications");
-  const { user, init } = useAuthStore();
+  const { user: authUser, init } = useAuthStore();
+  const { user: profileUser, fetchProfile } = useProfileStore();
+
+  const user = profileUser || authUser;
 
   useEffect(() => {
     init();
-  }, [init]);
+    fetchProfile();
+  }, [init, fetchProfile]);
 
   return (
     <>
@@ -111,8 +116,8 @@ export default function Sidebar() {
               <span className="text-sm font-semibold text-gray-900 truncate">
                 {user?.name || user?.username || "Account"}
               </span>
-              <span className="text-xs text-gray-500 truncate">
-                {user?.email || "Signed in"}
+              <span className="text-xs text-gray-500 truncate font-mono">
+                {user?.username ? `@${user.username}` : "Signed in"}
               </span>
             </div>
           </div>

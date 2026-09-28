@@ -19,6 +19,12 @@ import CreateWorkflowModal from "../Workflowpage/components/CreateWorkflowModal"
 import { saveWorkflow } from "@/api/workflow.api";
 import { useBillingStore } from "@/zusstore/billing.store";
 import { useCredentialStore } from "@/zusstore/credential.store";
+import { useWorkflowStore } from "@/zusstore/workflow.store";
+import {
+  HomeStatsCardSkeleton,
+  HomePlanCardSkeleton,
+  HomeConnectionsCardSkeleton,
+} from "@/shared/Skeleton";
 
 const ANALYTICS_DATA: Record<
   string,
@@ -65,11 +71,11 @@ const TEMPLATES = [
 const formatPlanName = (p?: string) => {
   switch (p) {
     case "SMALL":
-      return "Small Pack";
+      return "Small Tier";
     case "MEDIUM":
-      return "Medium Pack";
+      return "Medium Tier";
     case "LARGE":
-      return "Large Pack";
+      return "Large Tier";
     case "CUSTOM":
       return "Custom Plan";
     case "FREE_TIER":
@@ -83,13 +89,33 @@ export default function Home() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<{ name: string; description: string } | null>(null);
 
-  const { balance: creditBalance, plan: userPlan, fetchBillingData } = useBillingStore();
-  const { credentials: connections, fetchCredentials } = useCredentialStore();
+  const {
+    balance: creditBalance,
+    plan: userPlan,
+    loading: billingLoading,
+    hasLoaded: billingHasLoaded,
+    fetchBillingData,
+  } = useBillingStore();
+
+  const {
+    credentials: connections,
+    loading: credLoading,
+    hasLoaded: credHasLoaded,
+    fetchCredentials,
+  } = useCredentialStore();
+
+  const {
+    workflows,
+    loading: wfLoading,
+    hasLoaded: wfHasLoaded,
+    fetchWorkflows,
+  } = useWorkflowStore();
 
   useEffect(() => {
     fetchBillingData();
     fetchCredentials();
-  }, [fetchBillingData, fetchCredentials]);
+    fetchWorkflows();
+  }, [fetchBillingData, fetchCredentials, fetchWorkflows]);
 
   const currentAnalytics = ANALYTICS_DATA[timeFilter] || ANALYTICS_DATA["7 Days"];
 
@@ -138,28 +164,31 @@ export default function Home() {
         <div className="flex-1 overflow-y-auto no-scrollbar p-6 md:p-8 flex flex-col">
           <div className="max-w-6xl mx-auto w-full flex flex-col gap-8 pb-6">
 
-            {/* Top 4 Stats Cards (Exact Git Commit Structure) */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {/* Total Workflows */}
-              <div className="relative overflow-hidden border border-gray-200 bg-white rounded-2xl p-6 flex flex-col justify-between shadow-sm flex-shrink-0 min-h-[140px]">
-                <div className="z-10 relative">
-                  <h2 className="text-sm font-bold text-gray-700 mb-1">
-                    Total Workflows
-                  </h2>
-                  <div className="text-4xl font-bold text-gray-900 my-1 font-sans tracking-tight">
-                    24
+            {/* Top 4 Stats Cards */}
+            {wfLoading && !wfHasLoaded ? (
+              <HomeStatsCardSkeleton />
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {/* Total Workflows */}
+                <div className="relative overflow-hidden border border-gray-200 bg-white rounded-2xl p-6 flex flex-col justify-between shadow-sm flex-shrink-0 min-h-[140px]">
+                  <div className="z-10 relative">
+                    <h2 className="text-sm font-bold text-gray-700 mb-1">
+                      Total Workflows
+                    </h2>
+                    <div className="text-4xl font-bold text-gray-900 my-1 font-sans tracking-tight">
+                      {workflows.length}
+                    </div>
+                    <p className="text-xs text-gray-500 font-medium">
+                      Active pipelines
+                    </p>
                   </div>
-                  <p className="text-xs text-gray-500 font-medium">
-                    +3 this month
-                  </p>
+                  <div className="absolute right-0 top-0 bottom-0 w-32 opacity-10 pointer-events-none flex items-center justify-end pr-2">
+                    <Lightning
+                      weight="duotone"
+                      className="w-24 h-24 text-blue-600 absolute -right-4"
+                    />
+                  </div>
                 </div>
-                <div className="absolute right-0 top-0 bottom-0 w-32 opacity-10 pointer-events-none flex items-center justify-end pr-2">
-                  <Lightning
-                    weight="duotone"
-                    className="w-24 h-24 text-blue-600 absolute -right-4"
-                  />
-                </div>
-              </div>
 
               {/* Executions Today */}
               <div className="relative overflow-hidden border border-gray-200 bg-white rounded-2xl p-6 flex flex-col justify-between shadow-sm flex-shrink-0 min-h-[140px]">
@@ -224,6 +253,7 @@ export default function Home() {
                 </div>
               </div>
             </div>
+            )}
 
             {/* Execution Analytics Graph with Top-Left Clipped Watermark Icon */}
             <div className="relative overflow-hidden bg-white rounded-2xl border border-gray-200/90 p-6 md:p-8 shadow-xs">
@@ -323,104 +353,112 @@ export default function Home() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
               {/* Plan Card */}
-              <div className="relative overflow-hidden bg-white rounded-2xl border border-gray-200/90 p-6 md:p-7 shadow-xs flex flex-col justify-between min-h-[220px]">
-                {/* Top-left clipped watermark icon */}
-                <div className="absolute -top-7 -left-7 w-28 h-28 opacity-10 pointer-events-none text-blue-600">
-                  <Coins weight="duotone" className="w-full h-full" />
-                </div>
-
-                <div className="z-10 relative">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-base font-bold text-gray-900">Plan</h3>
-                    <span className="text-xs font-bold text-blue-600 bg-blue-50 border border-blue-200/60 px-2.5 py-1 rounded-full">
-                      {formatPlanName(userPlan)}
-                    </span>
+              {billingLoading && !billingHasLoaded ? (
+                <HomePlanCardSkeleton />
+              ) : (
+                <div className="relative overflow-hidden bg-white rounded-2xl border border-gray-200/90 p-6 md:p-7 shadow-xs flex flex-col justify-between min-h-[220px]">
+                  {/* Top-left clipped watermark icon */}
+                  <div className="absolute -top-7 -left-7 w-28 h-28 opacity-10 pointer-events-none text-blue-600">
+                    <Coins weight="duotone" className="w-full h-full" />
                   </div>
 
-                  <div className="flex items-baseline justify-between mt-2 mb-3">
-                    <div>
-                      <span className="text-3xl font-bold text-gray-900 font-sans tracking-tight">
-                        {creditBalance.toLocaleString()}
+                  <div className="z-10 relative">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-base font-bold text-gray-900">Plan</h3>
+                      <span className="text-xs font-bold text-blue-600 bg-blue-50 border border-blue-200/60 px-2.5 py-1 rounded-full">
+                        {formatPlanName(userPlan)}
                       </span>
-                      <span className="text-xs text-gray-500 ml-1.5 font-medium">available credits</span>
                     </div>
+
+                    <div className="flex items-baseline justify-between mt-2 mb-3">
+                      <div>
+                        <span className="text-3xl font-bold text-gray-900 font-sans tracking-tight">
+                          {creditBalance.toLocaleString()}
+                        </span>
+                        <span className="text-xs text-gray-500 ml-1.5 font-medium">available credits</span>
+                      </div>
+                    </div>
+
+                    <div className="w-full h-2.5 bg-gray-100 rounded-full overflow-hidden mb-3">
+                      <div
+                        className="h-full bg-blue-600 rounded-full transition-all duration-500"
+                        style={{
+                          width: `${Math.min(100, Math.max(0, (creditBalance / 1000) * 100))}%`,
+                        }}
+                      />
+                    </div>
+
+                    <p className="text-xs text-gray-500">
+                      When your balance reaches zero, workflows pause automatically.
+                    </p>
                   </div>
 
-                  <div className="w-full h-2.5 bg-gray-100 rounded-full overflow-hidden mb-3">
-                    <div
-                      className="h-full bg-blue-600 rounded-full transition-all duration-500"
-                      style={{
-                        width: `${Math.min(100, Math.max(0, (creditBalance / 1000) * 100))}%`,
-                      }}
-                    />
-                  </div>
-
-                  <p className="text-xs text-gray-500">
-                    When your balance reaches zero, workflows pause automatically.
-                  </p>
-                </div>
-
-                <div className="z-10 relative pt-4 mt-4 border-t border-gray-100 flex items-center justify-between">
-                  <span className="text-xs text-gray-400">Renews monthly</span>
-                  <Link
-                    href="/billing"
-                    className="text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1"
-                  >
-                    <span>Add Credits</span>
-                    <ArrowRight weight="bold" className="w-3.5 h-3.5" />
-                  </Link>
-                </div>
-              </div>
-
-              {/* Connections Card */}
-              <div className="relative overflow-hidden bg-white rounded-2xl border border-gray-200/90 p-6 md:p-7 shadow-xs flex flex-col justify-between min-h-[220px]">
-                {/* Top-left clipped watermark icon */}
-                <div className="absolute -top-7 -left-7 w-28 h-28 opacity-10 pointer-events-none text-blue-600">
-                  <Key weight="duotone" className="w-full h-full" />
-                </div>
-
-                <div className="z-10 relative">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-base font-bold text-gray-900">Connections</h3>
+                  <div className="z-10 relative pt-4 mt-4 border-t border-gray-100 flex items-center justify-between">
+                    <span className="text-xs text-gray-400"></span>
                     <Link
-                      href="/credentials"
+                      href="/billing"
                       className="text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1"
                     >
-                      <span>Manage</span>
+                      <span>Add Credits</span>
                       <ArrowRight weight="bold" className="w-3.5 h-3.5" />
                     </Link>
                   </div>
+                </div>
+              )}
 
-                  {connections.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-6 text-center">
-                      <span className="text-xs text-gray-400 mb-2">No active connections yet</span>
+              {/* Connections Card */}
+              {credLoading && !credHasLoaded ? (
+                <HomeConnectionsCardSkeleton />
+              ) : (
+                <div className="relative overflow-hidden bg-white rounded-2xl border border-gray-200/90 p-6 md:p-7 shadow-xs flex flex-col justify-between min-h-[220px]">
+                  {/* Top-left clipped watermark icon */}
+                  <div className="absolute -top-7 -left-7 w-28 h-28 opacity-10 pointer-events-none text-blue-600">
+                    <Key weight="duotone" className="w-full h-full" />
+                  </div>
+
+                  <div className="z-10 relative">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-base font-bold text-gray-900">Connections</h3>
                       <Link
                         href="/credentials"
-                        className="text-xs font-semibold text-blue-600 hover:underline"
+                        className="text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1"
                       >
-                        + Add Credential
+                        <span>Manage</span>
+                        <ArrowRight weight="bold" className="w-3.5 h-3.5" />
                       </Link>
                     </div>
-                  ) : (
-                    <div className="grid grid-cols-2 gap-3 mt-3">
-                      {connections.slice(0, 4).map((item) => (
-                        <div
-                          key={item.id}
-                          className="flex items-center justify-between p-3 rounded-xl bg-gray-50/70 border border-gray-200/60 hover:border-blue-200 transition-colors"
+
+                    {connections.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center py-6 text-center">
+                        <span className="text-xs text-gray-400 mb-2">No active connections yet</span>
+                        <Link
+                          href="/credentials"
+                          className="text-xs font-semibold text-blue-600 hover:underline"
                         >
-                          <span className="text-xs font-semibold text-gray-800 truncate mr-1">
-                            {item.name || item.provider}
-                          </span>
-                          <div className="flex items-center gap-1 text-[11px] text-emerald-600 font-medium shrink-0">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                            <span>Active</span>
+                          + Add Credential
+                        </Link>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-2 gap-3 mt-3">
+                        {connections.slice(0, 4).map((item) => (
+                          <div
+                            key={item.id}
+                            className="flex items-center justify-between p-3 rounded-xl bg-gray-50/70 border border-gray-200/60 hover:border-blue-200 transition-colors"
+                          >
+                            <span className="text-xs font-semibold text-gray-800 truncate mr-1">
+                              {item.name || item.provider}
+                            </span>
+                            <div className="flex items-center gap-1 text-[11px] text-emerald-600 font-medium shrink-0">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                              <span>Active</span>
+                            </div>
                           </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
+              )}
 
             </div>
 

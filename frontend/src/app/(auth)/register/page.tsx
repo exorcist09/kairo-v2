@@ -25,11 +25,15 @@ export default function Register() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!agreedToTerms) return;
+    if (!agreedToTerms || loading) return;
     try {
+      setLoading(true);
+      setErrorMsg("");
       const data = await register({
         avatar: getAvatarLabel(avatar),
         username,
@@ -52,9 +56,8 @@ export default function Register() {
 
       window.location.href = "/login";
     } catch (error: any) {
-      console.error(
-        error.response?.data?.message || "Registration failed"
-      );
+      setErrorMsg(error.response?.data?.message || "Registration failed. Please check your details.");
+      setLoading(false);
     }
   };
 
@@ -229,17 +232,30 @@ export default function Register() {
               </label>
             </div>
 
+            {errorMsg && (
+              <p className="text-xs text-red-600 font-semibold">{errorMsg}</p>
+            )}
+
             {/* Submit Button with rounded-xl */}
             <button
               type="submit"
-              disabled={!agreedToTerms}
+              disabled={!agreedToTerms || loading}
               className="w-full bg-blue-600 hover:bg-blue-700 active:bg-blue-800 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-3 px-4 rounded-xl shadow-sm transition-all hover:shadow-md active:scale-[0.99] flex items-center justify-center gap-2 group mt-3 cursor-pointer"
             >
-              <span>Create Account</span>
-              <ArrowRight
-                weight="bold"
-                className="w-4 h-4 transition-transform group-hover:translate-x-1"
-              />
+              {loading ? (
+                <>
+                  <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <span>Registering...</span>
+                </>
+              ) : (
+                <>
+                  <span>Create Account</span>
+                  <ArrowRight
+                    weight="bold"
+                    className="w-4 h-4 transition-transform group-hover:translate-x-1"
+                  />
+                </>
+              )}
             </button>
           </form>
 

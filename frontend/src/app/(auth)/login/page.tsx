@@ -17,10 +17,14 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      setLoading(true);
+      setErrorMsg("");
       const data = await login({
         email,
         password,
@@ -32,7 +36,8 @@ export default function Login() {
       }
       window.location.href = "/home";
     } catch (error: any) {
-      console.error(error.response?.data?.message || "Login failed");
+      setErrorMsg(error.response?.data?.message || "Login failed. Please check your credentials.");
+      setLoading(false);
     }
   };
 
@@ -129,16 +134,30 @@ export default function Login() {
             </div>
           </div>
 
+          {errorMsg && (
+            <p className="text-xs text-red-600 font-semibold">{errorMsg}</p>
+          )}
+
           {/* Submit button with rounded-xl */}
           <button
             type="submit"
-            className="w-full bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold py-3 px-4 rounded-xl shadow-sm transition-all hover:shadow-md active:scale-[0.99] flex items-center justify-center gap-2 group mt-3 cursor-pointer"
+            disabled={loading}
+            className="w-full bg-blue-600 hover:bg-blue-700 active:bg-blue-800 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-3 px-4 rounded-xl shadow-sm transition-all hover:shadow-md active:scale-[0.99] flex items-center justify-center gap-2 group mt-3 cursor-pointer"
           >
-            <span>Log In</span>
-            <ArrowRight
-              weight="bold"
-              className="w-4 h-4 transition-transform group-hover:translate-x-1"
-            />
+            {loading ? (
+              <>
+                <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                <span>Logging in...</span>
+              </>
+            ) : (
+              <>
+                <span>Log In</span>
+                <ArrowRight
+                  weight="bold"
+                  className="w-4 h-4 transition-transform group-hover:translate-x-1"
+                />
+              </>
+            )}
           </button>
         </form>
 

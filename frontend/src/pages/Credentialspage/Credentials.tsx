@@ -58,6 +58,8 @@ export default function Credentials() {
   const [revealedIds, setRevealedIds] = useState<Set<string>>(new Set());
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+  const [deleteTarget, setDeleteTarget] = useState<CredentialItem | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   // Form State
   const [name, setName] = useState("");
@@ -105,17 +107,21 @@ export default function Credentials() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this credential?")) return;
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
     try {
-      await deleteCredential(id);
+      setDeleting(true);
+      await deleteCredential(deleteTarget.id);
       setRevealedIds((prev) => {
         const next = new Set(prev);
-        next.delete(id);
+        next.delete(deleteTarget.id);
         return next;
       });
+      setDeleteTarget(null);
     } catch (err) {
       console.error("Failed to delete credential", err);
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -136,7 +142,7 @@ export default function Credentials() {
         <button
           type="button"
           onClick={() => {
-            setName("OpenAI Key");
+            setName("");
             setSecretKey("");
             setProvider("OpenAI");
             setErrorMsg("");
@@ -175,7 +181,7 @@ export default function Credentials() {
             <button
               type="button"
               onClick={() => {
-                setName("OpenAI Key");
+                setName("");
                 setSecretKey("");
                 setProvider("OpenAI");
                 setErrorMsg("");
@@ -237,7 +243,7 @@ export default function Credentials() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => handleDelete(item.id)}
+                      onClick={() => setDeleteTarget(item)}
                       aria-label="Delete credential"
                       className="p-2 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
                     >
@@ -376,6 +382,60 @@ export default function Credentials() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 animate-in fade-in duration-150">
+          <div className="bg-white rounded-2xl border border-gray-200 max-w-sm w-full p-6 shadow-xl relative animate-in zoom-in-95 duration-150">
+            <button
+              type="button"
+              onClick={() => setDeleteTarget(null)}
+              disabled={deleting}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-10 h-10 rounded-xl bg-red-50 text-red-600 flex items-center justify-center flex-shrink-0">
+                <Trash weight="bold" className="w-5 h-5" />
+              </div>
+              <div className="min-w-0">
+                <h3 className="text-base font-bold text-gray-900">Delete Credential</h3>
+                <p className="text-xs text-gray-500 truncate max-w-[200px]">
+                  {deleteTarget.name}
+                </p>
+              </div>
+            </div>
+            <p className="text-sm font-semibold text-gray-900 mt-3">
+              Are you sure?
+            </p>
+            <p className="text-xs text-gray-500 mt-1 leading-relaxed">
+              Workflows relying on this credential will fail until a replacement is configured.
+            </p>
+            <div className="flex justify-end gap-2 pt-5">
+              <button
+                type="button"
+                onClick={() => setDeleteTarget(null)}
+                disabled={deleting}
+                className="px-4 py-2 rounded-xl text-xs font-semibold text-gray-600 hover:bg-gray-100 disabled:opacity-50 cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={confirmDelete}
+                disabled={deleting}
+                className="px-4 py-2 rounded-xl text-xs font-semibold bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white cursor-pointer shadow-xs flex items-center gap-1.5"
+              >
+                {deleting && (
+                  <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                )}
+                <span>{deleting ? "Deleting..." : "Delete"}</span>
+              </button>
+            </div>
           </div>
         </div>
       )}

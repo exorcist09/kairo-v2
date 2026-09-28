@@ -128,3 +128,87 @@ export function SettingsSkeleton() {
     </div>
   );
 }
+
+export function HomeStatsCardSkeleton() {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {[1, 2, 3, 4].map((i) => (
+        <div
+          key={i}
+          className="border border-gray-200 bg-white rounded-2xl p-6 flex flex-col justify-between shadow-sm min-h-[140px]"
+        >
+          <div className="flex flex-col gap-2">
+            <Skeleton className="h-4 w-28 rounded-md" />
+            <Skeleton className="h-9 w-20 rounded-lg" />
+            <Skeleton className="h-3 w-24 rounded-md" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export function HomeGraphCardSkeleton() {
+  return (
+    <div className="bg-white rounded-2xl border border-gray-200/90 p-6 md:p-8 shadow-xs flex flex-col gap-6">
+      <div className="flex justify-between items-center">
+        <Skeleton className="h-6 w-44 rounded-md" />
+        <Skeleton className="h-8 w-40 rounded-xl" />
+      </div>
+      <Skeleton className="h-56 w-full rounded-xl" />
+    </div>
+  );
+}
+
+export function HomePlanCardSkeleton() {
+  return (
+    <div className="bg-white rounded-2xl border border-gray-200/90 p-6 md:p-7 shadow-xs flex flex-col justify-between min-h-[220px]">
+      <div className="flex justify-between items-center mb-4">
+        <Skeleton className="h-5 w-16 rounded-md" />
+        <Skeleton className="h-6 w-24 rounded-full" />
+      </div>
+      <div className="flex flex-col gap-2 my-2">
+        <Skeleton className="h-8 w-28 rounded-lg" />
+        <Skeleton className="h-2.5 w-full rounded-full" />
+        <Skeleton className="h-3 w-48 rounded-md" />
+      </div>
+      <div className="pt-4 border-t border-gray-100 flex justify-between">
+        <Skeleton className="h-4 w-24 rounded-md" />
+        <Skeleton className="h-4 w-20 rounded-md" />
+      </div>
+    </div>
+  );
+}
+
+export function HomeConnectionsCardSkeleton() {
+  return (
+    <div className="bg-white rounded-2xl border border-gray-200/90 p-6 md:p-7 shadow-xs flex flex-col justify-between min-h-[220px]">
+      <div className="flex justify-between items-center mb-4">
+        <Skeleton className="h-5 w-28 rounded-md" />
+        <Skeleton className="h-4 w-16 rounded-md" />
+      </div>
+      <div className="grid grid-cols-2 gap-3 mt-2">
+        {[1, 2, 3, 4].map((i) => (
+          <Skeleton key={i} className="h-12 rounded-xl" />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export function HomeTemplatesCardSkeleton() {
+  return (
+    <div className="bg-white rounded-2xl border border-gray-200/90 p-6 md:p-8 shadow-xs flex flex-col gap-5">
+      <Skeleton className="h-6 w-36 rounded-md" />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="p-5 rounded-2xl border border-gray-200 bg-white flex flex-col gap-3 h-28 justify-between">
+            <Skeleton className="h-5 w-36 rounded-md" />
+            <Skeleton className="h-3 w-full rounded-md" />
+            <Skeleton className="h-3 w-3/4 rounded-md" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
