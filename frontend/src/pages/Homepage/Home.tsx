@@ -14,6 +14,7 @@ import {
   Sparkle,
   XCircle,
   Play,
+  KeyIcon,
 } from "@phosphor-icons/react";
 import CreateWorkflowModal from "../Workflowpage/components/CreateWorkflowModal";
 import { saveWorkflow } from "@/api/workflow.api";
@@ -133,7 +134,7 @@ export default function Home() {
               className="w-9 h-9 rounded-full bg-white border border-gray-200 flex items-center justify-center text-gray-600 hover:text-blue-600 hover:border-blue-200 hover:shadow-xs transition-all cursor-pointer"
               title="Credentials & API Keys"
             >
-              <Lightning className="w-4 h-4" />
+              <KeyIcon className="w-4 h-4" />
             </Link>
             <Link
               href="/workflows"
