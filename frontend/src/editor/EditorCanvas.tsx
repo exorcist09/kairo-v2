@@ -473,7 +473,11 @@ function InnerEditorCanvas({
           gap={20}
           size={1.2}
         />
-        <Controls className="!bg-white text-[#2563EB] !border !border-gray-200 !rounded-xl !shadow-sm overflow-hidden" />
+        <Controls
+          showFitView={false}
+          showInteractive={false}
+          className="!bg-white text-[#2563EB] !border !border-gray-200 !rounded-xl !shadow-sm overflow-hidden"
+        />
         <MiniMap
           nodeColor="#2563EB"
           className="!bg-gray-300/90 !border !border-gray-200 !rounded-xl !shadow-sm overflow-hidden"
