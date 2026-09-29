@@ -1,27 +1,37 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import {
-  Key,
-  Plus,
-  X,
-  Eye,
-  EyeClosed,
-  Trash,
-} from "@phosphor-icons/react";
-import {
-  useCredentialStore,
-  CredentialItem,
-} from "@/zusstore/credential.store";
+import { Eye, EyeClosed, Key, Plus, Trash, X } from "@phosphor-icons/react";
+import { useEffect, useState } from "react";
+import DeleteCredentialModal from "@/shared/DeleteCredentialModal";
 import { CredentialListSkeleton } from "@/shared/Skeleton";
+import {
+  type CredentialItem,
+  useCredentialStore,
+} from "@/zusstore/credential.store";
 
 const PROVIDER_OPTIONS = [
-  { value: "OpenAI", label: "OpenAI API", placeholder: "sk-proj-••••••••••••••••" },
-  { value: "Google Gemini", label: "Google Gemini", placeholder: "AIzaSy••••••••••••••••" },
+  {
+    value: "OpenAI",
+    label: "OpenAI API",
+    placeholder: "sk-proj-••••••••••••••••",
+  },
+  {
+    value: "Google Gemini",
+    label: "Google Gemini",
+    placeholder: "AIzaSy••••••••••••••••",
+  },
   { value: "Slack", label: "Slack Bot", placeholder: "xoxb-••••••••••••••••" },
   { value: "Email", label: "Email", placeholder: "smtp_pass_••••••••••••••••" },
-  { value: "PostgreSQL", label: "PostgreSQL Database", placeholder: "postgresql://user:pass@host:5432/db" },
-  { value: "Google Form", label: "Google Form", placeholder: "1FAIpQLSc••••••••••••••••" },
+  {
+    value: "PostgreSQL",
+    label: "PostgreSQL Database",
+    placeholder: "postgresql://user:pass@host:5432/db",
+  },
+  {
+    value: "Google Form",
+    label: "Google Form",
+    placeholder: "1FAIpQLSc••••••••••••••••",
+  },
 ];
 
 function maskKey(val: string) {
@@ -101,7 +111,11 @@ export default function Credentials() {
       setShowModalSecret(false);
       setIsModalOpen(false);
     } catch (err: any) {
-      setErrorMsg(err.response?.data?.message || err.message || "Failed to save credential");
+      setErrorMsg(
+        err.response?.data?.message ||
+          err.message ||
+          "Failed to save credential",
+      );
     } finally {
       setSubmitting(false);
     }
@@ -135,7 +149,8 @@ export default function Credentials() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Credentials</h1>
           <p className="text-xs text-gray-500 mt-0.5">
-            Store and manage secure credentials and tokens for workflows and integrations.
+            Store and manage secure credentials and tokens for workflows and
+            integrations.
           </p>
         </div>
 
@@ -174,7 +189,8 @@ export default function Credentials() {
               No credentials connected yet
             </h2>
             <p className="text-xs text-gray-500 max-w-sm mb-6">
-              Connect API keys and secrets for OpenAI, Gemini, Slack, Email, PostgreSQL, and Google Forms.
+              Connect API keys and secrets for OpenAI, Gemini, Slack, Email,
+              PostgreSQL, and Google Forms.
             </p>
 
             {/* Primary Action Button */}
@@ -236,7 +252,10 @@ export default function Credentials() {
                       className="p-2 rounded-lg text-gray-400 hover:text-blue-600 active:text-blue-700 hover:bg-blue-50 transition-colors cursor-pointer select-none"
                     >
                       {isRevealed ? (
-                        <EyeClosed weight="bold" className="w-4 h-4 text-blue-600" />
+                        <EyeClosed
+                          weight="bold"
+                          className="w-4 h-4 text-blue-600"
+                        />
                       ) : (
                         <Eye weight="bold" className="w-4 h-4" />
                       )}
@@ -272,7 +291,9 @@ export default function Credentials() {
             <div className="flex items-center justify-between pb-4 border-b border-gray-200">
               <div className="flex items-center gap-2.5">
                 <Key weight="bold" className="w-6 h-6 text-blue-600" />
-                <h2 className="text-xl font-bold text-gray-900">Add Credential</h2>
+                <h2 className="text-xl font-bold text-gray-900">
+                  Add Credential
+                </h2>
               </div>
               <button
                 type="button"
@@ -295,7 +316,11 @@ export default function Credentials() {
                   onChange={(e) => {
                     const nextP = e.target.value;
                     setProvider(nextP);
-                    if (!name || name.endsWith("Key") || name.endsWith("Token")) {
+                    if (
+                      !name ||
+                      name.endsWith("Key") ||
+                      name.endsWith("Token")
+                    ) {
                       setName(`${nextP} Key`);
                     }
                   }}
@@ -346,14 +371,18 @@ export default function Credentials() {
                     className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 active:text-blue-600 transition-colors cursor-pointer select-none p-1"
                   >
                     {showModalSecret ? (
-                      <EyeClosed weight="bold" className="w-5 h-5 text-blue-600" />
+                      <EyeClosed
+                        weight="bold"
+                        className="w-5 h-5 text-blue-600"
+                      />
                     ) : (
                       <Eye className="w-5 h-5" />
                     )}
                   </button>
                 </div>
                 <p className="text-[11px] text-gray-500">
-                  Click eye icon to toggle secret visibility. Encrypted securely before saving.
+                  Click eye icon to toggle secret visibility. Encrypted securely
+                  before saving.
                 </p>
               </div>
 
@@ -387,58 +416,13 @@ export default function Credentials() {
       )}
 
       {/* Delete Confirmation Modal */}
-      {deleteTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 animate-in fade-in duration-150">
-          <div className="bg-white rounded-2xl border border-gray-200 max-w-sm w-full p-6 shadow-xl relative animate-in zoom-in-95 duration-150">
-            <button
-              type="button"
-              onClick={() => setDeleteTarget(null)}
-              disabled={deleting}
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 cursor-pointer"
-            >
-              <X className="w-5 h-5" />
-            </button>
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 rounded-xl bg-red-50 text-red-600 flex items-center justify-center flex-shrink-0">
-                <Trash weight="bold" className="w-5 h-5" />
-              </div>
-              <div className="min-w-0">
-                <h3 className="text-base font-bold text-gray-900">Delete Credential</h3>
-                <p className="text-xs text-gray-500 truncate max-w-[200px]">
-                  {deleteTarget.name}
-                </p>
-              </div>
-            </div>
-            <p className="text-sm font-semibold text-gray-900 mt-3">
-              Are you sure?
-            </p>
-            <p className="text-xs text-gray-500 mt-1 leading-relaxed">
-              Workflows relying on this credential will fail until a replacement is configured.
-            </p>
-            <div className="flex justify-end gap-2 pt-5">
-              <button
-                type="button"
-                onClick={() => setDeleteTarget(null)}
-                disabled={deleting}
-                className="px-4 py-2 rounded-xl text-xs font-semibold text-gray-600 hover:bg-gray-100 disabled:opacity-50 cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={confirmDelete}
-                disabled={deleting}
-                className="px-4 py-2 rounded-xl text-xs font-semibold bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white cursor-pointer shadow-xs flex items-center gap-1.5"
-              >
-                {deleting && (
-                  <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                )}
-                <span>{deleting ? "Deleting..." : "Delete"}</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <DeleteCredentialModal
+        isOpen={Boolean(deleteTarget)}
+        credentialName={deleteTarget?.name || ""}
+        isDeleting={deleting}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 }

@@ -1,33 +1,33 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import {
   CaretDown,
-  EnvelopeSimple,
-  LockKey,
   Check,
-  UserCircle,
-  IdentificationCard,
-  ShieldCheck,
-  Prohibit,
+  EnvelopeSimple,
   FloppyDisk,
+  IdentificationCard,
+  LockKey,
+  Prohibit,
+  ShieldCheck,
+  UserCircle,
   X,
 } from "@phosphor-icons/react";
-import AvatarSelector, {
-  getAvatarLabel,
-} from "@/shared/AvatarSelector";
+import { useEffect, useState } from "react";
 import {
-  updateProfile,
+  updateAvatar,
   updateEmail,
   updatePassword,
-  updateAvatar,
+  updateProfile,
 } from "@/api/profile.api";
+import AvatarSelector, { getAvatarLabel } from "@/shared/AvatarSelector";
+import DisableAccountModal from "@/shared/DisableAccountModal";
+import { SettingsSkeleton } from "@/shared/Skeleton";
 import { useAuthStore } from "@/zusstore/auth.store";
 import { useProfileStore } from "@/zusstore/profile.store";
-import { SettingsSkeleton } from "@/shared/Skeleton";
 
 export default function Settings() {
-  const { user, loading, hasLoaded, fetchProfile, updateUserFields } = useProfileStore();
+  const { user, loading, hasLoaded, fetchProfile, updateUserFields } =
+    useProfileStore();
   const [is2FAEnabled, setIs2FAEnabled] = useState(false);
 
   // Avatar State
@@ -124,7 +124,9 @@ export default function Settings() {
       init();
       setTimeout(() => setProfileSavedSuccess(false), 2500);
     } catch (err: any) {
-      setProfileError(err.response?.data?.message || "Failed to update profile");
+      setProfileError(
+        err.response?.data?.message || "Failed to update profile",
+      );
     } finally {
       setProfileSaving(false);
     }
@@ -172,7 +174,9 @@ export default function Settings() {
         setPasswordMsg("");
       }, 1500);
     } catch (err: any) {
-      setPasswordErr(err.response?.data?.message || "Failed to update password");
+      setPasswordErr(
+        err.response?.data?.message || "Failed to update password",
+      );
     } finally {
       setPasswordSaving(false);
     }
@@ -186,7 +190,8 @@ export default function Settings() {
       <div className="mb-6 flex-shrink-0">
         <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
         <p className="text-xs text-gray-500 mt-0.5">
-          Manage your personal profile, account credentials, and platform preferences.
+          Manage your personal profile, account credentials, and platform
+          preferences.
         </p>
       </div>
 
@@ -205,7 +210,9 @@ export default function Settings() {
                 </div>
 
                 <div className="z-10 relative mb-4">
-                  <h2 className="text-base sm:text-lg font-bold text-gray-900">Profile Avatar</h2>
+                  <h2 className="text-base sm:text-lg font-bold text-gray-900">
+                    Profile Avatar
+                  </h2>
                   <p className="text-xs text-gray-500 mt-0.5">
                     Pick your avatar character. Click save below to update.
                   </p>
@@ -240,8 +247,8 @@ export default function Settings() {
                       {avatarSaving
                         ? "Saving..."
                         : isAvatarChanged
-                        ? "Save Avatar"
-                        : "Avatar Saved"}
+                          ? "Save Avatar"
+                          : "Avatar Saved"}
                     </span>
                   </button>
 
@@ -263,18 +270,25 @@ export default function Settings() {
               <div className="relative overflow-hidden bg-white rounded-2xl border border-gray-200/90 p-6 md:p-8 shadow-xs flex flex-col gap-6">
                 {/* Top-left clipped watermark icon */}
                 <div className="absolute -top-7 -left-7 w-28 h-28 opacity-10 pointer-events-none text-blue-600">
-                  <IdentificationCard weight="duotone" className="w-full h-full" />
+                  <IdentificationCard
+                    weight="duotone"
+                    className="w-full h-full"
+                  />
                 </div>
 
                 <div className="z-10 relative pb-3 border-b border-gray-100">
-                  <h2 className="text-base sm:text-lg font-bold text-gray-900">Contact Details</h2>
+                  <h2 className="text-base sm:text-lg font-bold text-gray-900">
+                    Contact Details
+                  </h2>
                 </div>
 
                 {/* Form Grid */}
                 <div className="z-10 relative grid grid-cols-1 md:grid-cols-2 gap-5">
                   {/* Full Name */}
                   <div className="flex flex-col gap-1.5 md:col-span-2">
-                    <label className="text-xs font-semibold text-gray-700">Full Name</label>
+                    <label className="text-xs font-semibold text-gray-700">
+                      Full Name
+                    </label>
                     <input
                       type="text"
                       value={fullName}
@@ -286,7 +300,9 @@ export default function Settings() {
 
                   {/* Country */}
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-semibold text-gray-700">Country / Region</label>
+                    <label className="text-xs font-semibold text-gray-700">
+                      Country / Region
+                    </label>
                     <div className="relative">
                       <select
                         value={country}
@@ -306,7 +322,9 @@ export default function Settings() {
 
                   {/* Phone Number */}
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-semibold text-gray-700">Phone Number</label>
+                    <label className="text-xs font-semibold text-gray-700">
+                      Phone Number
+                    </label>
                     <input
                       type="tel"
                       value={phone}
@@ -352,14 +370,18 @@ export default function Settings() {
                 </div>
 
                 <div className="z-10 relative pb-3 border-b border-gray-100">
-                  <h2 className="text-base sm:text-lg font-bold text-gray-900">Account Security</h2>
+                  <h2 className="text-base sm:text-lg font-bold text-gray-900">
+                    Account Security
+                  </h2>
                 </div>
 
                 <div className="z-10 relative flex flex-col divide-y divide-gray-100">
                   {/* Username Row */}
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between py-3.5 gap-2">
                     <div className="flex flex-col">
-                      <span className="text-xs font-bold text-gray-900">Username</span>
+                      <span className="text-xs font-bold text-gray-900">
+                        Username
+                      </span>
                       <span className="text-xs text-gray-500 font-mono mt-0.5">
                         @{username || "user"}
                       </span>
@@ -372,8 +394,12 @@ export default function Settings() {
                   {/* Email Row */}
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between py-3.5 gap-2">
                     <div className="flex flex-col">
-                      <span className="text-xs font-bold text-gray-900">Email Address</span>
-                      <span className="text-xs text-gray-500 mt-0.5">{email || "No email"}</span>
+                      <span className="text-xs font-bold text-gray-900">
+                        Email Address
+                      </span>
+                      <span className="text-xs text-gray-500 mt-0.5">
+                        {email || "No email"}
+                      </span>
                     </div>
                     <button
                       type="button"
@@ -393,7 +419,9 @@ export default function Settings() {
                   {/* Password Row */}
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between py-3.5 gap-2">
                     <div className="flex flex-col">
-                      <span className="text-xs font-bold text-gray-900">Password</span>
+                      <span className="text-xs font-bold text-gray-900">
+                        Password
+                      </span>
                       <span className="text-xs text-gray-400 font-mono tracking-wider mt-0.5">
                         ••••••••••••
                       </span>
@@ -417,9 +445,12 @@ export default function Settings() {
                   {/* 2FA Row */}
                   <div className="flex items-center justify-between py-3.5 gap-4">
                     <div className="flex flex-col">
-                      <span className="text-xs font-bold text-gray-900">Two-Factor Authentication (2FA)</span>
+                      <span className="text-xs font-bold text-gray-900">
+                        Two-Factor Authentication (2FA)
+                      </span>
                       <span className="text-xs text-gray-500 mt-0.5">
-                        Add an extra layer of multi-factor security using an authenticator app
+                        Add an extra layer of multi-factor security using an
+                        authenticator app
                       </span>
                     </div>
 
@@ -435,7 +466,9 @@ export default function Settings() {
                     >
                       <div
                         className={`absolute top-1 bg-white w-4 h-4 rounded-full shadow-xs transition-transform duration-200 ease-in-out ${
-                          is2FAEnabled ? "translate-x-6 left-0" : "translate-x-1 left-0"
+                          is2FAEnabled
+                            ? "translate-x-6 left-0"
+                            : "translate-x-1 left-0"
                         }`}
                       />
                     </button>
@@ -451,18 +484,24 @@ export default function Settings() {
                 </div>
 
                 <div className="z-10 relative pb-3 border-b border-amber-900/10 flex flex-col gap-0.5">
-                  <h2 className="text-base sm:text-lg font-bold text-[#78350f]">Disabled Zone</h2>
+                  <h2 className="text-base sm:text-lg font-bold text-[#78350f]">
+                    Disabled Zone
+                  </h2>
                   <span className="text-xs text-amber-900/70">
-                    Manage temporary account restrictions and automated activity pauses
+                    Manage temporary account restrictions and automated activity
+                    pauses
                   </span>
                 </div>
 
                 <div className="z-10 relative flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-1">
                   <div className="flex flex-col">
-                    <span className="text-xs font-bold text-gray-900">Disable Account</span>
+                    <span className="text-xs font-bold text-gray-900">
+                      Disable Account
+                    </span>
                     <span className="text-xs text-gray-600 mt-0.5 max-w-md">
-                      Temporarily pause your personal account, webhooks, and active workflow executions.
-                      You can reactivate at any time by logging back in.
+                      Temporarily pause your personal account, webhooks, and
+                      active workflow executions. You can reactivate at any time
+                      by logging back in.
                     </span>
                   </div>
                   <button
@@ -481,50 +520,14 @@ export default function Settings() {
       </div>
 
       {/* Confirmation Modal for Disabled Zone */}
-      {isDisableModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 animate-in fade-in duration-150">
-          <div className="bg-white rounded-2xl border border-amber-900/20 max-w-md w-full p-6 shadow-xl relative animate-in zoom-in-95 duration-150">
-            <button
-              type="button"
-              onClick={() => setIsDisableModalOpen(false)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 cursor-pointer"
-            >
-              <X className="w-5 h-5" />
-            </button>
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-9 h-9 rounded-xl bg-amber-50 text-[#78350f] flex items-center justify-center flex-shrink-0">
-                <Prohibit className="w-5 h-5" />
-              </div>
-              <h3 className="text-lg font-bold text-[#78350f]">Disable Account</h3>
-            </div>
-            <p className="text-sm font-semibold text-gray-900 mt-2">
-              Are you sure?
-            </p>
-            <p className="text-xs text-gray-500 mt-1 leading-relaxed">
-              This will temporarily pause your personal account, webhooks, and active workflow executions.
-            </p>
-            <div className="flex justify-end gap-2 pt-5">
-              <button
-                type="button"
-                onClick={() => setIsDisableModalOpen(false)}
-                className="px-4 py-2 rounded-xl text-xs font-semibold text-gray-600 hover:bg-gray-100 cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setIsDisableModalOpen(false);
-                  alert("This feature is under development");
-                }}
-                className="px-4 py-2 rounded-xl text-xs font-semibold bg-[#78350f] hover:bg-[#5c280a] text-white cursor-pointer shadow-xs"
-              >
-                Disable Account
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <DisableAccountModal
+        isOpen={isDisableModalOpen}
+        onClose={() => setIsDisableModalOpen(false)}
+        onConfirm={() => {
+          setIsDisableModalOpen(false);
+          alert("This feature is under development");
+        }}
+      />
 
       {/* Change Email Modal */}
       {isEmailModalOpen && (
@@ -537,14 +540,19 @@ export default function Settings() {
             >
               <X className="w-5 h-5" />
             </button>
-            <h3 className="text-lg font-bold text-gray-900 mb-1">Update Email Address</h3>
+            <h3 className="text-lg font-bold text-gray-900 mb-1">
+              Update Email Address
+            </h3>
             <p className="text-xs text-gray-500 mb-4">
-              Enter your new email address. Account notifications and recovery links will be updated.
+              Enter your new email address. Account notifications and recovery
+              links will be updated.
             </p>
             <form onSubmit={handleEmailSubmit} className="space-y-4">
               {/* Disabled Current Email */}
               <div>
-                <label className="text-xs font-semibold text-gray-700 block mb-1">Current Email</label>
+                <label className="text-xs font-semibold text-gray-700 block mb-1">
+                  Current Email
+                </label>
                 <input
                   type="email"
                   disabled
@@ -555,7 +563,9 @@ export default function Settings() {
 
               {/* Editable New Email */}
               <div>
-                <label className="text-xs font-semibold text-gray-700 block mb-1">New Email</label>
+                <label className="text-xs font-semibold text-gray-700 block mb-1">
+                  New Email
+                </label>
                 <input
                   type="email"
                   required
@@ -566,8 +576,14 @@ export default function Settings() {
                 />
               </div>
 
-              {emailMsg && <p className="text-xs text-emerald-600 font-semibold">{emailMsg}</p>}
-              {emailErr && <p className="text-xs text-red-600 font-semibold">{emailErr}</p>}
+              {emailMsg && (
+                <p className="text-xs text-emerald-600 font-semibold">
+                  {emailMsg}
+                </p>
+              )}
+              {emailErr && (
+                <p className="text-xs text-red-600 font-semibold">{emailErr}</p>
+              )}
               <div className="flex justify-end gap-2 pt-2">
                 <button
                   type="button"
@@ -578,7 +594,11 @@ export default function Settings() {
                 </button>
                 <button
                   type="submit"
-                  disabled={emailSaving || !newEmailInput.trim() || newEmailInput === email}
+                  disabled={
+                    emailSaving ||
+                    !newEmailInput.trim() ||
+                    newEmailInput === email
+                  }
                   className="px-4 py-2 rounded-xl text-xs font-semibold bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white cursor-pointer flex items-center gap-1.5"
                 >
                   {emailSaving && (
@@ -603,7 +623,9 @@ export default function Settings() {
             >
               <X className="w-5 h-5" />
             </button>
-            <h3 className="text-lg font-bold text-gray-900 mb-1">Update Password</h3>
+            <h3 className="text-lg font-bold text-gray-900 mb-1">
+              Update Password
+            </h3>
             <p className="text-xs text-gray-500 mb-4">
               Enter your current password and choose a secure new password.
             </p>
@@ -632,8 +654,16 @@ export default function Settings() {
                   className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-600"
                 />
               </div>
-              {passwordMsg && <p className="text-xs text-emerald-600 font-semibold">{passwordMsg}</p>}
-              {passwordErr && <p className="text-xs text-red-600 font-semibold">{passwordErr}</p>}
+              {passwordMsg && (
+                <p className="text-xs text-emerald-600 font-semibold">
+                  {passwordMsg}
+                </p>
+              )}
+              {passwordErr && (
+                <p className="text-xs text-red-600 font-semibold">
+                  {passwordErr}
+                </p>
+              )}
               <div className="flex justify-end gap-2 pt-2">
                 <button
                   type="button"
@@ -650,7 +680,9 @@ export default function Settings() {
                   {passwordSaving && (
                     <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                   )}
-                  <span>{passwordSaving ? "Updating..." : "Update Password"}</span>
+                  <span>
+                    {passwordSaving ? "Updating..." : "Update Password"}
+                  </span>
                 </button>
               </div>
             </form>
