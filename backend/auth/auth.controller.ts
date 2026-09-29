@@ -19,31 +19,37 @@ export const registerController = async (req: Request, res: Response) => {
       result,
     });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error(error);
 
-    return res.status(500).json({
-      message: "Internal Server Error",
+    return res.status(400).json({
+      message: error instanceof Error ? error.message : "Registration Failed",
     });
   }
 };
 
 export const loginController = async (req: Request, res: Response) => {
-  const { email, password } = req.body;
+  try {
+    const { email, password } = req.body;
 
-  const result = await authService.login(email, password);
+    const result = await authService.login(email, password);
 
-  return res.status(200).json({
-    message: "Login Successful",
-    user: {
-      id: result.user.id,
-      email: result.user.email,
-      username: result.user.username,
-      name: result.user.name,
-    },
-    token: result.accessToken,
-    refreshToken: result.refreshToken
-  });
+    return res.status(200).json({
+      message: "Login Successful",
+      user: {
+        id: result.user.id,
+        email: result.user.email,
+        username: result.user.username,
+        name: result.user.name,
+      },
+      token: result.accessToken,
+      refreshToken: result.refreshToken
+    });
+  } catch (error: any) {
+    return res.status(400).json({
+      message: error instanceof Error ? error.message : "Login Failed",
+    });
+  }
 };
 
 
