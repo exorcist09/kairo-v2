@@ -16,7 +16,7 @@ app.use(morgan("dev")); // in order to log
 app.use(cookieParser()); // in order to read cookie for refresh token
 
 app.get("/", (req, res) => {
-  res.status(200).send("Kairo Backend");
+  res.status(200).send("Kairo Backend running");
 });
 
 // OK
