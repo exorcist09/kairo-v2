@@ -1,6 +1,7 @@
 import { Router } from "express";
 import * as workflowController from "./workflow.controller";
 const workflowRouter = Router();
+import * as executionController from "../execution/execution.controller";
 
 // getallWorkflow -OK
 workflowRouter.get("/", workflowController.getAllWorkflowsController);
@@ -14,9 +15,13 @@ workflowRouter.get("/:id", workflowController.getWorkflowByIdController);
 // delete workflow - OK
 workflowRouter.delete("/:id", workflowController.deleteWorkflowController);
 
+// save/update workflow inside the editor
+workflowRouter.post("/:id/save", workflowController.saveController);
 
-// update workflow inside the editor
-workflowRouter.post("/:id", workflowController.saveController);
-
+// execute workflow
+workflowRouter.post(
+  "/:id/execute",
+  executionController.executeWorkflowController,
+);
 
 export default workflowRouter;

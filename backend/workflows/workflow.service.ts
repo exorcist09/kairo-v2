@@ -1,5 +1,5 @@
 import { prisma } from "../lib/prisma";
-import { WorkflowStatus } from "../generated/prisma/enums";
+import { NodeType, WorkflowStatus } from "../generated/prisma/enums";
 
 interface FlowNode {
   id: string;
@@ -143,44 +143,104 @@ export const getAll = async (
 
 // save workflow in order to store node and edges when user has created the workflow
 
+type SaveNode = {
+  id: string;
+  name?: string;
+  type: NodeType;
+  position: Record<string, any>;
+  data: Record<string, any>;
+};
+
+type SaveConnection = {
+  fromNodeId: string;
+  toNodeId: string;
+  fromOutput?: string;
+  toInput?: string;
+};
+
 export const saveWorkflow = async (
   workflowId: string,
   userId: string,
-  name: string,
-  type: string,
-  position: string,
-  data: string,
-  fromNodeId: string,
-  toNodeId: string,
-  updatedAt: number
+  nodes: SaveNode[],
+  connections: SaveConnection[],
 ) => {
+  // First make sure this workflow belongs to
+  // the user making the request.
   const workflow = await prisma.workflow.findFirst({
-    where: { id: userId },
+    where: {
+      id: workflowId,
+      userId,
+    },
   });
 
   if (!workflow) {
-    throw new Error("User not found");
+    throw new Error("Workflow not found");
   }
 
-  const node = await prisma.node.create({
-    where: { id: workflowId },
-    data: {
-      name,
-      type,
-      position,
-      data,
-      updatedAt
-    },
+  // Save the complete workflow atomically.
+  //
+  // Either everything succeeds,
+  // or nothing is changed.
+  await prisma.$transaction(async (tx) => {
+    // Remove the old connections first because
+    // they reference the existing nodes.
+    await tx.connection.deleteMany({
+      where: {
+        workflowId,
+      },
+    });
+
+    // Remove the old nodes.
+    await tx.node.deleteMany({
+      where: {
+        workflowId,
+      },
+    });
+
+    // Insert the nodes currently present
+    // on the React Flow canvas.
+    await tx.node.createMany({
+      data: nodes.map((node) => ({
+        id: node.id,
+        workflowId,
+
+        // React Flow's node type must match
+        // your Prisma NodeType enum.
+        type: node.type,
+
+        // Use the node name if you have one.
+        name: node.name ?? node.type,
+
+        // React Flow position.
+        position: node.position,
+
+        // Node-specific configuration.
+        //
+        // Example:
+        // Browser:
+        // { url: "https://google.com" }
+        //
+        // Input:
+        // { prompt: "Go search dolphins" }
+        data: node.data,
+      })),
+    });
+
+    // Insert all connections between nodes.
+    await tx.connection.createMany({
+      data: connections.map((connection) => ({
+        workflowId,
+
+        fromNodeId: connection.fromNodeId,
+        toNodeId: connection.toNodeId,
+
+        fromOutput: connection.fromOutput ?? "main",
+        toInput: connection.toInput ?? "main",
+      })),
+    });
   });
 
-  const edge = await prisma.connection.create({
-    where: { id: workflowId },
-    data: {
-      fromNodeId,
-      toNodeId,
-      updatedAt
-    },
-  });
-
-  return { node, edge };
+  return {
+    message: "Workflow saved successfully",
+  };
 };

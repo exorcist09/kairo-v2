@@ -1,14 +1,7 @@
-export const executeHttpRequest: NodeExecutor = async (
-  node,
-  context
-) => {
+import type { NodeExecutor } from "./node_context.schema";
 
-  const {
-    url,
-    method,
-    headers,
-    body,
-  } = node.data ?? {};
+export const executeHttpRequest: NodeExecutor = async (node, context) => {
+  const { url, method, headers, body } = node.data ?? {};
 
   if (!url) {
     throw new Error("HTTP URL is required");
