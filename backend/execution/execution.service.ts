@@ -1,5 +1,5 @@
 import { prisma } from "../lib/prisma";
-import workflowQueue from "../queues/execution.queue"
+import { workflowQueue } from "../queues/execution.queue";
 
 export const startWorkflowExecution = async (
   workflowId: string,
@@ -27,10 +27,21 @@ export const startWorkflowExecution = async (
   //
   // The API request finishes quickly.
   // The worker will execute the workflow in the background.
-  const job = await workflowQueue.add("execute-workflow", {
-    workflowId,
-    userId,
-  });
+  const job = await workflowQueue.add(
+    "execute-workflow",
+    {
+      workflowId,
+      userId,
+    },
+    {
+      attempts: 2,
+      backoff: {
+        type: "exponential",
+        delay: 1000,
+      },
+    },
+  );
+
   return {
     message: "Workflow execution started",
     jobId: job.id,

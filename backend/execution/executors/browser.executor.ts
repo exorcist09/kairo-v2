@@ -1,10 +1,13 @@
+import type { BrowserNodeData } from "./node-data.types";
 import type { NodeExecutor } from "./node_context.schema";
 import { chromium } from "playwright";
 
+
 export const executeBrowser: NodeExecutor = async (node, context) => {
   // taking out url send by frontend which user enters in the node
-  const urlInput = node.data?.urlForm;
-  const url = context.data[urlInput];
+  const data = node.data as BrowserNodeData;
+
+  const url = data.urlForm;
 
   if (!url) {
     throw new Error("Browser node did not receive a URL");

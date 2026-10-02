@@ -1,6 +1,6 @@
 import { executeBrowser } from "./executors/browser.executor";
 import { executeClaude } from "./executors/claude.executor";
-import { executeGemini } from "./executors/google-gemini.executor";
+import { executeGemini } from "./executors/googlegemini.executor";
 import { executeGoogleform } from "./executors/googleform.executor";
 import { executeHttpRequest } from "./executors/http-request.executor";
 import { executeInput } from "./executors/input.executor";

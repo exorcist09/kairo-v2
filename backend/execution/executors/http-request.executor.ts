@@ -1,7 +1,9 @@
+import type { HttpRequestData } from "./node-data.types";
 import type { NodeExecutor } from "./node_context.schema";
 
 export const executeHttpRequest: NodeExecutor = async (node, context) => {
-  const { url, method, headers, body } = node.data ?? {};
+  const data = node.data as HttpRequestData;
+  const { url, method, headers, body } = data;
 
   if (!url) {
     throw new Error("HTTP URL is required");
@@ -15,12 +17,12 @@ export const executeHttpRequest: NodeExecutor = async (node, context) => {
 
   const contentType = response.headers.get("content-type");
 
-  const data = contentType?.includes("application/json")
+  const content = contentType?.includes("application/json")
     ? await response.json()
     : await response.text();
 
   return {
     status: response.status,
-    data,
+    content,
   };
 };

@@ -16,30 +16,35 @@
     "@types/morgan": "^1.9.10",
     "@types/nodemailer": "^8.0.1",
     "@types/passport": "^1.0.17",
-    "@types/pg": "^8.20.0",
+    "@types/pg": "^8.23.1",
     "prisma": "^7.8.0"
   },
   "peerDependencies": {
     "typescript": "^5"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.131.0",
+    "@google/generative-ai": "^0.24.1",
     "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^7.8.0",
     "@types/cors": "^2.8.19",
     "@types/passport-google-oauth20": "^2.0.17",
     "arctic": "^3.7.0",
     "bcrypt": "^6.0.0",
+    "bullmq": "^6.3.11",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
+    "googleapis": "^182.0.0",
     "ioredis": "^6.0.0",
     "jsonwebtoken": "^9.0.3",
     "morgan": "^1.11.0",
-    "nodemailer": "^9.0.1",
+    "nodemailer": "^10.0.13",
+    "openai": "^7.27.0",
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",
-    "pg": "^8.22.0",
+    "pg": "^8.23.1",
     "playwright": "^1.63.0",
     "razorpay": "^2.9.8"
   }
