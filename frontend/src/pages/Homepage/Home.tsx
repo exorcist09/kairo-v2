@@ -24,6 +24,7 @@ import { useWorkflowStore } from "@/zusstore/workflow.store";
 import { useAnalyticsStore } from "@/zusstore/analytics.store";
 import {
   HomeStatsCardSkeleton,
+  HomeGraphCardSkeleton,
   HomePlanCardSkeleton,
   HomeConnectionsCardSkeleton,
 } from "@/shared/Skeleton";
@@ -291,115 +292,119 @@ export default function Home() {
             )}
 
             {/* Execution Analytics Graph with Top-Left Clipped Watermark Icon */}
-            <div className="relative overflow-hidden bg-white rounded-2xl border border-gray-200/90 p-6 md:p-8 shadow-xs">
-              {/* Top-left clipped watermark icon */}
-              <div className="absolute -top-7 -left-7 w-32 h-32 opacity-10 pointer-events-none text-blue-600">
-                <ChartLineUp weight="duotone" className="w-full h-full" />
-              </div>
+            {analyticsLoading && !analyticsHasLoaded ? (
+              <HomeGraphCardSkeleton />
+            ) : (
+              <div className="relative overflow-hidden bg-white rounded-2xl border border-gray-200/90 p-6 md:p-8 shadow-xs">
+                {/* Top-left clipped watermark icon */}
+                <div className="absolute -top-7 -left-7 w-32 h-32 opacity-10 pointer-events-none text-blue-600">
+                  <ChartLineUp weight="duotone" className="w-full h-full" />
+                </div>
 
-              <div className="z-10 relative flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
-                <div>
-                  <h3 className="text-base sm:text-lg font-bold text-gray-900">
-                    Execution Analytics
-                  </h3>
-                  <div className="flex items-center gap-2.5 mt-1 text-xs text-gray-500 font-medium">
-                    <span>
-                      Total runs:{" "}
-                      <strong className="text-gray-900 font-semibold">
-                        {currentAnalytics.total}
-                      </strong>
-                    </span>
-                    <span className="text-gray-300">•</span>
-                    <span>
-                      Success rate:{" "}
-                      <strong className="text-emerald-600 font-semibold">
-                        {currentAnalytics.successRate}
-                      </strong>
-                    </span>
+                <div className="z-10 relative flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
+                  <div>
+                    <h3 className="text-base sm:text-lg font-bold text-gray-900">
+                      Execution Analytics
+                    </h3>
+                    <div className="flex items-center gap-2.5 mt-1 text-xs text-gray-500 font-medium">
+                      <span>
+                        Total runs:{" "}
+                        <strong className="text-gray-900 font-semibold">
+                          {currentAnalytics.total}
+                        </strong>
+                      </span>
+                      <span className="text-gray-300">•</span>
+                      <span>
+                        Success rate:{" "}
+                        <strong className="text-emerald-600 font-semibold">
+                          {currentAnalytics.successRate}
+                        </strong>
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Period Filter Tabs: Today | 7 Day | 30 Day */}
+                  <div className="flex items-center p-1 select-none">
+                    {[
+                      { id: "Today", label: "Today" },
+                      { id: "7 Days", label: "7 Day" },
+                      { id: "30 Days", label: "30 Day" },
+                    ].map((tab, idx, arr) => {
+                      const isActive = timeFilter === tab.id;
+                      return (
+                        <div key={tab.id} className="flex items-center">
+                          <button
+                            type="button"
+                            onClick={() => setTimeFilter(tab.id as "Today" | "7 Days" | "30 Days")}
+                            className={`px-3 py-1.5 text-xs font-semibold rounded-lg  cursor-pointer ${
+                              isActive
+                                ? "bg-blue-50 text-blue-600 shadow-2xs font-bold border border-blue-200/80"
+                                : "text-gray-500 hover:text-gray-900 hover:bg-gray-50"
+                            }`}
+                          >
+                            {tab.label}
+                          </button>
+                          {idx < arr.length - 1 && (
+                            <span className="text-gray-300 text-xs px-1 select-none pointer-events-none">|</span>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
 
-                {/* Period Filter Tabs: Today | 7 Day | 30 Day */}
-                <div className="flex items-center p-1 select-none">
-                  {[
-                    { id: "Today", label: "Today" },
-                    { id: "7 Days", label: "7 Day" },
-                    { id: "30 Days", label: "30 Day" },
-                  ].map((tab, idx, arr) => {
-                    const isActive = timeFilter === tab.id;
-                    return (
-                      <div key={tab.id} className="flex items-center">
-                        <button
-                          type="button"
-                          onClick={() => setTimeFilter(tab.id as "Today" | "7 Days" | "30 Days")}
-                          className={`px-3 py-1.5 text-xs font-semibold rounded-lg  cursor-pointer ${
-                            isActive
-                              ? "bg-blue-50 text-blue-600 shadow-2xs font-bold border border-blue-200/80"
-                              : "text-gray-500 hover:text-gray-900 hover:bg-gray-50"
-                          }`}
-                        >
-                          {tab.label}
-                        </button>
-                        {idx < arr.length - 1 && (
-                          <span className="text-gray-300 text-xs px-1 select-none pointer-events-none">|</span>
-                        )}
-                      </div>
-                    );
-                  })}
+                {/* Area Chart Container */}
+                <div className="z-10 relative h-60 w-full flex items-end pt-4">
+                  {/* Y-axis labels */}
+                  <div className="absolute left-0 top-0 bottom-6 flex flex-col justify-between text-xs font-medium text-gray-400 w-8 select-none">
+                    {currentAnalytics.yAxis.map((val, idx) => (
+                      <span key={idx}>{val}</span>
+                    ))}
+                  </div>
+
+                  {/* Horizontal Grid lines */}
+                  <div className="absolute left-10 right-0 top-2 bottom-6 flex flex-col justify-between pointer-events-none">
+                    {currentAnalytics.yAxis.slice(0, -1).map((_, i) => (
+                      <div key={i} className="w-full border-b border-gray-100 border-dashed" />
+                    ))}
+                  </div>
+
+                  {/* SVG Area Chart with Gradient */}
+                  <div className="absolute left-10 right-0 top-2 bottom-6">
+                    <svg className="w-full h-full overflow-visible" preserveAspectRatio="none" viewBox="0 0 100 100">
+                      <defs>
+                        <linearGradient id="homeChartGrad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#2563EB" stopOpacity="0.22" />
+                          <stop offset="100%" stopColor="#2563EB" stopOpacity="0.0" />
+                        </linearGradient>
+                      </defs>
+                      <polygon
+                        points={`0,100 ${currentAnalytics.points} 100,100`}
+                        fill="url(#homeChartGrad)"
+                        className="transition-all duration-500 ease-out"
+                      />
+                      <polyline
+                        fill="none"
+                        stroke="#2563EB"
+                        strokeWidth="2.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        vectorEffect="non-scaling-stroke"
+                        points={currentAnalytics.points}
+                        className="transition-all duration-500 ease-out"
+                      />
+                    </svg>
+                  </div>
+
+                  {/* X-axis labels */}
+                  <div className="absolute left-10 right-0 bottom-0 flex justify-between text-xs font-medium text-gray-400 px-2 select-none">
+                    {currentAnalytics.labels.map((lbl, idx) => (
+                      <span key={idx}>{lbl}</span>
+                    ))}
+                  </div>
                 </div>
               </div>
-
-              {/* Area Chart Container */}
-              <div className="z-10 relative h-60 w-full flex items-end pt-4">
-                {/* Y-axis labels */}
-                <div className="absolute left-0 top-0 bottom-6 flex flex-col justify-between text-xs font-medium text-gray-400 w-8 select-none">
-                  {currentAnalytics.yAxis.map((val, idx) => (
-                    <span key={idx}>{val}</span>
-                  ))}
-                </div>
-
-                {/* Horizontal Grid lines */}
-                <div className="absolute left-10 right-0 top-2 bottom-6 flex flex-col justify-between pointer-events-none">
-                  {currentAnalytics.yAxis.slice(0, -1).map((_, i) => (
-                    <div key={i} className="w-full border-b border-gray-100 border-dashed" />
-                  ))}
-                </div>
-
-                {/* SVG Area Chart with Gradient */}
-                <div className="absolute left-10 right-0 top-2 bottom-6">
-                  <svg className="w-full h-full overflow-visible" preserveAspectRatio="none" viewBox="0 0 100 100">
-                    <defs>
-                      <linearGradient id="homeChartGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#2563EB" stopOpacity="0.22" />
-                        <stop offset="100%" stopColor="#2563EB" stopOpacity="0.0" />
-                      </linearGradient>
-                    </defs>
-                    <polygon
-                      points={`0,100 ${currentAnalytics.points} 100,100`}
-                      fill="url(#homeChartGrad)"
-                      className="transition-all duration-500 ease-out"
-                    />
-                    <polyline
-                      fill="none"
-                      stroke="#2563EB"
-                      strokeWidth="2.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      vectorEffect="non-scaling-stroke"
-                      points={currentAnalytics.points}
-                      className="transition-all duration-500 ease-out"
-                    />
-                  </svg>
-                </div>
-
-                {/* X-axis labels */}
-                <div className="absolute left-10 right-0 bottom-0 flex justify-between text-xs font-medium text-gray-400 px-2 select-none">
-                  {currentAnalytics.labels.map((lbl, idx) => (
-                    <span key={idx}>{lbl}</span>
-                  ))}
-                </div>
-              </div>
-            </div>
+            )}
 
             {/* Side-by-Side: Plan & Connections with Top-Left Clipped Watermark Icons */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

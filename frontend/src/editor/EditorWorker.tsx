@@ -389,7 +389,7 @@ export default function EditorWorker({
             >
               Collapse
             </button>
-          </div>
+          </div>u
         </div>
 
         {/* Tab & Filter Bar */}

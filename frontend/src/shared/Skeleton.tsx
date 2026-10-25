@@ -150,12 +150,34 @@ export function HomeStatsCardSkeleton() {
 
 export function HomeGraphCardSkeleton() {
   return (
-    <div className="bg-white rounded-2xl border border-gray-200/90 p-6 md:p-8 shadow-xs flex flex-col gap-6">
-      <div className="flex justify-between items-center">
-        <Skeleton className="h-6 w-44 rounded-md" />
-        <Skeleton className="h-8 w-40 rounded-xl" />
+    <div className="relative overflow-hidden bg-white rounded-2xl border border-gray-200/90 p-6 md:p-8 shadow-xs flex flex-col gap-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex flex-col gap-2">
+          <Skeleton className="h-6 w-44 rounded-md" />
+          <div className="flex items-center gap-2">
+            <Skeleton className="h-3.5 w-24 rounded-md" />
+            <span className="text-gray-300">•</span>
+            <Skeleton className="h-3.5 w-28 rounded-md" />
+          </div>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <Skeleton className="h-7 w-16 rounded-lg" />
+          <span className="text-gray-200 select-none">|</span>
+          <Skeleton className="h-7 w-16 rounded-lg" />
+          <span className="text-gray-200 select-none">|</span>
+          <Skeleton className="h-7 w-16 rounded-lg" />
+        </div>
       </div>
-      <Skeleton className="h-56 w-full rounded-xl" />
+      <div className="h-60 w-full flex items-end gap-3 pt-4">
+        <div className="flex flex-col justify-between h-full w-8 py-1 select-none">
+          <Skeleton className="h-3 w-5 rounded" />
+          <Skeleton className="h-3 w-5 rounded" />
+          <Skeleton className="h-3 w-5 rounded" />
+          <Skeleton className="h-3 w-5 rounded" />
+          <Skeleton className="h-3 w-5 rounded" />
+        </div>
+        <Skeleton className="h-full flex-1 rounded-xl" />
+      </div>
     </div>
   );
 }
