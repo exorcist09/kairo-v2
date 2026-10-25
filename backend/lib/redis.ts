@@ -2,11 +2,22 @@ import Redis from "ioredis";
 
 // Redis is used by BullMQ to store jobs and their state.
 export const redis = new Redis(
-  process.env.REDIS_URL! || "redis://localhost:6379",
+  process.env.REDIS_URL || "redis://localhost:6379",
   {
-    // BullMQ workers need this to be null so Redis commands
-    // are not prematurely failed while waiting for a connection.
     maxRetriesPerRequest: null,
+    enableOfflineQueue: false,
+    lazyConnect: true,
+    retryStrategy(times) {
+      // Don't hammer CPU if local Redis server is not running
+      if (times > 3) {
+        return null;
+      }
+      return 2000;
+    },
   },
 );
-// redis://localhost:6379" -> docker
+
+// Prevent unhandled error event spam when Redis is not running locally
+redis.on("error", (err) => {
+  // Silent fallback: BullMQ is optional in local dev when Redis is inactive
+});

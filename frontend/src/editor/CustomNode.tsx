@@ -4,7 +4,6 @@ import { memo } from "react";
 import { Handle, Position } from "@xyflow/react";
 import {
   Lightning,
-  Clock,
   Database,
   Sparkle,
   Brain,
@@ -95,15 +94,70 @@ const ICON_MAP: Record<string, any> = {
   google_form_executer: FileIcon,
 };
 
+export function formatCleanOutput(outputData: any): string {
+  if (outputData === undefined || outputData === null) {
+    return "No output yet. Run workflow to see results.";
+  }
+  if (typeof outputData === "string") {
+    return outputData.trim() || "No output yet. Run workflow to see results.";
+  }
+  if (typeof outputData === "number" || typeof outputData === "boolean") {
+    return String(outputData);
+  }
+
+  // Extract from known result shapes
+  if (outputData.response && typeof outputData.response === "string") {
+    return outputData.response;
+  }
+  if (outputData.prompt && typeof outputData.prompt === "string") {
+    return outputData.prompt;
+  }
+  if (outputData.content !== undefined) {
+    return typeof outputData.content === "string"
+      ? outputData.content
+      : JSON.stringify(outputData.content, null, 2);
+  }
+  if (outputData.text && typeof outputData.text === "string") {
+    return outputData.text;
+  }
+  if (outputData.title && typeof outputData.title === "string") {
+    return outputData.title;
+  }
+  if (outputData.query && typeof outputData.query === "string") {
+    return `Executed SQL:\n${outputData.query}`;
+  }
+  if (Array.isArray(outputData.rows)) {
+    return `${outputData.rowCount ?? outputData.rows.length} rows returned:\n` + JSON.stringify(outputData.rows, null, 2);
+  }
+  if (
+    outputData.result &&
+    typeof outputData.result === "string" &&
+    outputData.result !== "ready" &&
+    outputData.result !== "ok"
+  ) {
+    return outputData.result;
+  }
+
+  // If object with single string value, extract that directly
+  const values = Object.values(outputData);
+  if (values.length === 1 && typeof values[0] === "string") {
+    return values[0];
+  }
+
+  return JSON.stringify(outputData, null, 2);
+}
+
 function CustomNode({ id, data, selected }: any) {
   const nodeData = data as WorkflowNodeData;
   const iconKey = (nodeData.iconName || "").toLowerCase();
-  const IconComponent = ICON_MAP[iconKey] || ICON_MAP[String(nodeData.type || "").toLowerCase()] || Lightning;
+  const IconComponent =
+    ICON_MAP[iconKey] ||
+    ICON_MAP[String(nodeData.type || "").toLowerCase()] ||
+    Lightning;
   const status = nodeData.status || "idle";
 
   const isHttpRequest =
-    iconKey === "http" ||
-    nodeData.type === NodeType.HTTP_TRIGGER;
+    iconKey === "http" || nodeData.type === NodeType.HTTP_TRIGGER;
 
   const isOutput =
     iconKey === "output" ||
@@ -111,31 +165,35 @@ function CustomNode({ id, data, selected }: any) {
     nodeData.type === NodeType.OUTPUT;
 
   const isInput =
-    iconKey === "input" ||
-    nodeData.type === NodeType.INPUT_TRIGGER;
+    iconKey === "input" || nodeData.type === NodeType.INPUT_TRIGGER;
 
   const isBrowser =
-    iconKey === "browser" ||
-    nodeData.type === NodeType.BROWSER_TRIGGER;
+    iconKey === "browser" || nodeData.type === NodeType.BROWSER_TRIGGER;
 
   const isAI =
     nodeData.type === NodeType.CLAUDE_EXECUTER ||
     nodeData.type === NodeType.OPENAI_EXECUTER ||
     nodeData.type === NodeType.GEMINI_EXECUTER;
 
+  // Node border colors matching user requirements:
+  // - Currently running: GREEN (border-emerald-500)
+  // - Done / success: GREY (border-gray-400)
+  // - Failed / error: RED (border-red-500)
+  // - Idle: default (border-gray-200)
+  const borderClass =
+    status === "running"
+      ? "border-2 border-emerald-500 ring-2 ring-emerald-500/20 animate-pulse"
+      : status === "success"
+        ? "border-2 border-gray-400"
+        : status === "error"
+          ? "border-2 border-red-500 ring-2 ring-red-500/20"
+          : selected
+            ? "border-2 border-blue-600 ring-2 ring-blue-500/20"
+            : "border border-gray-200 hover:border-gray-300";
+
   return (
     <div
-      className={`relative group w-[185px] rounded-xl bg-white border transition-all duration-200 select-none shadow-xs ${
-        selected
-          ? "border-blue-600 ring-2 ring-blue-500/20"
-          : status === "running"
-            ? "border-2 border-blue-600 ring-2 ring-blue-500/30 animate-pulse"
-            : status === "success"
-              ? "border-emerald-500/80 ring-1 ring-emerald-500/20"
-              : status === "error"
-                ? "border-2 border-dashed border-red-500 ring-2 ring-red-500/20 animate-pulse"
-                : "border-gray-200 hover:border-gray-300"
-      }`}
+      className={`relative group w-[185px] rounded-xl bg-white transition-all duration-200 select-none shadow-xs ${borderClass}`}
     >
       {/* Input Handle (Left) */}
       <Handle
@@ -146,10 +204,27 @@ function CustomNode({ id, data, selected }: any) {
 
       {/* Node Card Content */}
       <div className="p-2.5 flex flex-col gap-1.5">
-        {/* Top row: icon | setting | delete */}
+        {/* Top row: icon | status tag | setting | delete */}
         <div className="flex items-center justify-between gap-1 pb-1.5 border-b border-gray-100">
-          <div className="w-5 h-5 rounded-md bg-blue-50/70 text-blue-700 border border-blue-200/60 flex items-center justify-center flex-shrink-0">
-            <IconComponent weight="duotone" className="w-3 h-3" />
+          <div className="flex items-center gap-1.5 min-w-0">
+            <div className="w-5 h-5 rounded-md bg-blue-50/70 text-blue-700 border border-blue-200/60 flex items-center justify-center flex-shrink-0">
+              <IconComponent weight="duotone" className="w-3 h-3" />
+            </div>
+            {status === "running" && (
+              <span className="text-[9px] font-bold text-emerald-600 bg-emerald-50 px-1 rounded animate-pulse">
+                Running
+              </span>
+            )}
+            {status === "success" && (
+              <span className="text-[9px] font-bold text-gray-500 bg-gray-100 px-1 rounded">
+                Done
+              </span>
+            )}
+            {status === "error" && (
+              <span className="text-[9px] font-bold text-red-600 bg-red-50 px-1 rounded">
+                Failed
+              </span>
+            )}
           </div>
 
           <div className="flex items-center gap-0.5 flex-shrink-0">
@@ -224,17 +299,17 @@ function CustomNode({ id, data, selected }: any) {
             </div>
           )}
 
-          {/* Input Trigger: Prompt input/textarea */}
+          {/* Input Trigger: Directly editable on the node */}
           {isInput && (
             <div className="mt-1">
               <textarea
-                value={nodeData.prompt || nodeData.textValue || ""}
+                value={nodeData.prompt ?? nodeData.textValue ?? ""}
                 onChange={(e) => {
                   nodeData.onChangeText?.(id, e.target.value);
                 }}
-                placeholder="Enter prompt..."
+                placeholder="Enter text here..."
                 rows={2}
-                className="nodrag nowheel w-full bg-gray-50 hover:bg-white focus:bg-white text-gray-800 font-sans text-[10px] p-1.5 rounded-lg border border-gray-200 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500/20 transition-all resize-none leading-tight"
+                className="nodrag nowheel nopan w-full bg-gray-50 hover:bg-white focus:bg-white text-gray-800 font-sans text-[10px] p-1.5 rounded-lg border border-gray-200 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500/20 transition-all resize-none leading-tight"
               />
             </div>
           )}
@@ -270,24 +345,14 @@ function CustomNode({ id, data, selected }: any) {
             </div>
           )}
 
-          {/* Output Node: Result box */}
+          {/* Output Node: Result box displaying clean result */}
           {isOutput && (
             <div className="mt-1">
               <div
-                title={
-                  nodeData.outputData
-                    ? typeof nodeData.outputData === "string"
-                      ? nodeData.outputData
-                      : JSON.stringify(nodeData.outputData)
-                    : '{"status": "ready"}'
-                }
-                className="bg-gray-900 text-emerald-400 font-mono text-[9px] p-1.5 rounded-lg border border-gray-800 shadow-inner h-20 overflow-y-auto no-scrollbar whitespace-pre-wrap break-all leading-relaxed"
+                title={formatCleanOutput(nodeData.outputData)}
+                className="bg-gray-900 text-emerald-400 font-mono text-[9px] p-2 rounded-lg border border-gray-800 shadow-inner h-20 overflow-y-auto no-scrollbar whitespace-pre-wrap break-all leading-relaxed"
               >
-                {nodeData.outputData
-                  ? typeof nodeData.outputData === "string"
-                    ? nodeData.outputData
-                    : JSON.stringify(nodeData.outputData, null, 2)
-                  : '{\n  "status": "ready"\n}'}
+                {formatCleanOutput(nodeData.outputData)}
               </div>
             </div>
           )}
@@ -305,4 +370,3 @@ function CustomNode({ id, data, selected }: any) {
 }
 
 export default memo(CustomNode);
-

@@ -6,6 +6,7 @@ import EditorTopbar from "./EditorTopbar";
 import EditorCanvas from "./EditorCanvas";
 import EditorWorker from "./EditorWorker";
 import { getByIdWorkflow, saveWorkflowCanvas, executeWorkflow } from "@/api/workflow.api";
+import { useWorkflowStore } from "@/zusstore/workflow.store";
 import { Node, Edge } from "@xyflow/react";
 import { CheckCircle, WarningCircle, X } from "@phosphor-icons/react";
 
@@ -14,6 +15,7 @@ interface EditorProps {
 }
 
 export default function Editor({ workflowId }: EditorProps) {
+  const { updateWorkflowStatus } = useWorkflowStore();
   const [view, setView] = useState<"editor" | "worker">("editor");
   const [isExecuting, setIsExecuting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -82,30 +84,37 @@ export default function Editor({ workflowId }: EditorProps) {
     }
   };
 
-  // Trigger backend execution API (BullMQ job queue)
-  const handleExecute = async () => {
-    try {
-      // First save current canvas so backend executes the latest state
-      if (saveCanvasRef.current) {
-        const payload = saveCanvasRef.current();
-        await saveWorkflowCanvas(workflowId, payload);
-      }
+  // Trigger backend execution instantly
+  const handleExecute = () => {
+    // 1. Instant UI response (0ms perceived latency)
+    setIsExecuting(true);
+    setWorkflowStatus("ONGOING");
+    updateWorkflowStatus(workflowId, "ongoing");
 
-      setIsExecuting(true);
-      setWorkflowStatus("ONGOING");
-      const res = await executeWorkflow(workflowId);
-      const jobId = res?.jobId;
-      if (jobId) {
-        setLastJobId(jobId);
-        showToast(`Workflow execution queued in BullMQ (Job #${jobId})`, "success");
-      } else {
-        showToast("Workflow execution started", "success");
+    // 2. Perform save and execution
+    (async () => {
+      try {
+        if (saveCanvasRef.current) {
+          const payload = saveCanvasRef.current();
+          await saveWorkflowCanvas(workflowId, payload);
+        }
+
+        const res = await executeWorkflow(workflowId);
+        const jobId = res?.jobId;
+        if (jobId) {
+          setLastJobId(jobId);
+        }
+      } catch (err: any) {
+        console.error("Execute workflow error:", err);
+        showToast(
+          err?.response?.data?.message || err?.message || "Execution failed",
+          "error"
+        );
+        setIsExecuting(false);
+        setWorkflowStatus("FAILED");
+        updateWorkflowStatus(workflowId, "failed");
       }
-    } catch (err: any) {
-      console.error("Execute workflow error:", err);
-      setIsExecuting(false);
-      showToast(err?.response?.data?.message || err?.message || "Execution failed", "error");
-    }
+    })();
   };
 
   const handleStop = () => {
@@ -116,6 +125,7 @@ export default function Editor({ workflowId }: EditorProps) {
   const handleExecutionComplete = () => {
     setIsExecuting(false);
     setWorkflowStatus("COMPLETED");
+    updateWorkflowStatus(workflowId, "completed");
     showToast("Workflow execution completed successfully!", "success");
   };
 

@@ -1,12 +1,13 @@
 import { prisma } from "../lib/prisma";
+import { executeWorkflow } from "./execution.engine";
 import { workflowQueue } from "../queues/execution.queue";
+import { redis } from "../lib/redis";
 
 export const startWorkflowExecution = async (
   workflowId: string,
   userId: string,
 ) => {
-  // This prevents one user from executing
-  // another user's workflow.
+  // Validate that workflow belongs to authenticated user
   const workflow = await prisma.workflow.findFirst({
     where: {
       id: workflowId,
@@ -18,33 +19,55 @@ export const startWorkflowExecution = async (
     throw new Error("Workflow not found");
   }
 
-  // Don't allow another execution if this workflow is already running.
-  if (workflow.workflowStatus === "ONGOING") {
-    throw new Error("Workflow is already running");
+  // Mark workflow ONGOING immediately in DB
+  await prisma.workflow.update({
+    where: { id: workflowId },
+    data: { workflowStatus: "ONGOING" },
+  });
+
+  // Execute workflow engine asynchronously in the background so API responds instantly
+  // Real-time progress is streamed via Socket.io
+  (async () => {
+    try {
+      const results = await executeWorkflow(workflowId);
+      await prisma.workflow.update({
+        where: { id: workflowId },
+        data: { workflowStatus: "COMPLETED" },
+      });
+      return results;
+    } catch (err) {
+      console.error(`Workflow ${workflowId} execution error:`, err);
+      await prisma.workflow
+        .update({
+          where: { id: workflowId },
+          data: { workflowStatus: "FAILED" },
+        })
+        .catch(() => {});
+    }
+  })();
+
+  // Optional BullMQ enqueue (non-blocking, only if Redis is connected)
+  let jobId = `job-${Date.now()}`;
+  if (redis.status === "ready") {
+    try {
+      const job = await workflowQueue.add(
+        "execute-workflow",
+        { workflowId, userId },
+        { attempts: 1 },
+      );
+      if (job?.id) {
+        jobId = job.id;
+      }
+    } catch {
+      // Non-fatal if Redis fails
+    }
   }
 
-  // Put the execution request into BullMQ.
-  //
-  // The API request finishes quickly.
-  // The worker will execute the workflow in the background.
-  const job = await workflowQueue.add(
-    "execute-workflow",
-    {
-      workflowId,
-      userId,
-    },
-    {
-      attempts: 2,
-      backoff: {
-        type: "exponential",
-        delay: 1000,
-      },
-    },
-  );
-
   return {
-    message: "Workflow execution started",
-    jobId: job.id,
+    message: "Workflow execution started instantly",
+    jobId,
     workflowId,
+    status: "ONGOING",
   };
 };
+

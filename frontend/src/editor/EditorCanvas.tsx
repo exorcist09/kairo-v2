@@ -25,19 +25,13 @@ import { WorkflowNodeData } from "./CustomNode";
 import { NodePaletteItem } from "./sidebar/EditorSidebar";
 import { NodeType } from "@/utils/constants";
 import { getCredentials } from "@/api/credentials.api";
+import { getSocket } from "@/lib/socket";
 import {
   X,
   Trash,
   FloppyDiskBackIcon,
   CaretDown,
   Key,
-  Sliders,
-  Sparkle,
-  Database,
-  EnvelopeSimple,
-  Globe,
-  TextT,
-  Terminal,
 } from "@phosphor-icons/react";
 
 interface EditorCanvasProps {
@@ -91,7 +85,7 @@ function InnerEditorCanvas({
   const [isSaved, setIsSaved] = useState(false);
   const [credentials, setCredentials] = useState<Array<{ id: string; type: string; name: string }>>([]);
 
-  // Fetch available user credentials to populate dropdowns
+  // Fetch available credentials
   useEffect(() => {
     let mounted = true;
     getCredentials()
@@ -108,7 +102,7 @@ function InnerEditorCanvas({
     };
   }, []);
 
-  // Sync initial nodes/edges if provided and current canvas is empty
+  // Sync initial nodes/edges if provided and local canvas is empty
   useEffect(() => {
     if (initialNodes.length > 0 && nodes.length === 0) {
       setNodes(initialNodes);
@@ -117,11 +111,153 @@ function InnerEditorCanvas({
 
   useEffect(() => {
     if (initialEdges.length > 0 && edges.length === 0) {
-      setEdges(initialEdges);
+      setEdges(
+        initialEdges.map((e) => ({
+          ...e,
+          animated: isExecuting,
+          style: { stroke: "#2563EB", strokeWidth: 2 },
+        })),
+      );
     }
-  }, [initialEdges]);
+  }, [initialEdges, isExecuting]);
 
-  // Derive selectedNode from live nodes state
+  // Edges style: solid when connected, dotted running ONLY while isExecuting
+  useEffect(() => {
+    setEdges((eds) =>
+      eds.map((edge) => ({
+        ...edge,
+        animated: isExecuting,
+        style: { stroke: isExecuting ? "#2563EB" : "#94A3B8", strokeWidth: 2 },
+      })),
+    );
+  }, [isExecuting]);
+
+  // Real-time Socket.io Execution Feedback
+  useEffect(() => {
+    if (!workflowId) return;
+    const socket = getSocket();
+
+    // Join room for this workflow
+    socket.emit("join:workflow", workflowId);
+
+    const handleNodeStart = (data: { nodeId: string }) => {
+      setNodes((nds) =>
+        nds.map((n) =>
+          n.id === data.nodeId
+            ? { ...n, data: { ...n.data, status: "running" } }
+            : n,
+        ),
+      );
+    };
+
+    const handleNodeSuccess = (data: { nodeId: string; result: any }) => {
+      setNodes((nds) => {
+        return nds.map((n) => {
+          if (n.id === data.nodeId) {
+            const isOutputNode =
+              n.type === NodeType.OUTPUT ||
+              (n.data as any)?.iconName === "output" ||
+              (n.data as any)?.iconName === "diamond";
+
+            return {
+              ...n,
+              data: {
+                ...n.data,
+                status: "success",
+                ...(isOutputNode && { outputData: data.result }),
+              },
+            };
+          }
+
+          // If a connected downstream output node exists, feed it with previous node result
+          const isDownstreamOutput =
+            n.type === NodeType.OUTPUT ||
+            (n.data as any)?.iconName === "output" ||
+            (n.data as any)?.iconName === "diamond";
+
+          return n;
+        });
+      });
+    };
+
+    const handleNodeError = (data: { nodeId: string; error: string }) => {
+      setNodes((nds) =>
+        nds.map((n) =>
+          n.id === data.nodeId
+            ? {
+                ...n,
+                data: {
+                  ...n.data,
+                  status: "error",
+                  error: data.error,
+                },
+              }
+            : n,
+        ),
+      );
+    };
+
+    const handleExecutionComplete = (data: { results: Record<string, any> }) => {
+      setNodes((nds) =>
+        nds.map((n) => {
+          const isOutputNode =
+            n.type === NodeType.OUTPUT ||
+            (n.data as any)?.iconName === "output" ||
+            (n.data as any)?.iconName === "diamond";
+
+          // If this is an output node, get result from incoming node or output node id
+          let finalOutput = n.data?.outputData;
+          if (isOutputNode && data?.results) {
+            if (data.results[n.id] !== undefined) {
+              finalOutput = data.results[n.id];
+            } else {
+              // Find edge connecting to this output node
+              const incoming = edges.find((e) => e.target === n.id);
+              if (incoming && data.results[incoming.source] !== undefined) {
+                finalOutput = data.results[incoming.source];
+              } else {
+                const resultKeys = Object.keys(data.results);
+                if (resultKeys.length > 0) {
+                  finalOutput = data.results[resultKeys[resultKeys.length - 1]];
+                }
+              }
+            }
+          }
+
+          return {
+            ...n,
+            data: {
+              ...n.data,
+              status: n.data.status === "error" ? "error" : "success",
+              ...(isOutputNode && finalOutput !== undefined && { outputData: finalOutput }),
+            },
+          };
+        }),
+      );
+      onExecutionComplete?.();
+    };
+
+    const handleExecutionFailed = () => {
+      onExecutionComplete?.();
+    };
+
+    socket.on("workflow:node:start", handleNodeStart);
+    socket.on("workflow:node:success", handleNodeSuccess);
+    socket.on("workflow:node:error", handleNodeError);
+    socket.on("workflow:execution:complete", handleExecutionComplete);
+    socket.on("workflow:execution:failed", handleExecutionFailed);
+
+    return () => {
+      socket.off("workflow:node:start", handleNodeStart);
+      socket.off("workflow:node:success", handleNodeSuccess);
+      socket.off("workflow:node:error", handleNodeError);
+      socket.off("workflow:execution:complete", handleExecutionComplete);
+      socket.off("workflow:execution:failed", handleExecutionFailed);
+      socket.emit("leave:workflow", workflowId);
+    };
+  }, [workflowId, edges, onExecutionComplete]);
+
+  // Derive selectedNode
   const selectedNode = useMemo(
     () => nodes.find((n) => n.id === selectedNodeId) || null,
     [nodes, selectedNodeId],
@@ -144,7 +280,7 @@ function InnerEditorCanvas({
     [selectedNodeId],
   );
 
-  // Handle open settings modal for a node
+  // Open settings drawer
   const handleOpenSettings = useCallback((id: string) => {
     setSelectedNodeId(id);
     setIsDirty(false);
@@ -221,7 +357,7 @@ function InnerEditorCanvas({
     [selectedNodeId],
   );
 
-  // Expose serialization to parent for saving canvas
+  // Serialization for saving workflow
   useEffect(() => {
     if (externalSaveRef) {
       externalSaveRef.current = () => {
@@ -233,7 +369,7 @@ function InnerEditorCanvas({
             type: (node.type || NodeType.OUTPUT) as NodeType,
             position: node.position,
             data: {
-              prompt: data.prompt || data.textValue || "",
+              prompt: data.prompt ?? data.textValue ?? "",
               urlForm: data.urlForm || data.browserUrl || "",
               url: data.url || data.endpointUrl || "",
               method: data.method || data.httpMethod || "GET",
@@ -288,56 +424,6 @@ function InnerEditorCanvas({
     handleMethodChange,
   ]);
 
-  // Animate nodes during execution
-  useEffect(() => {
-    if (!isExecuting) {
-      setNodes((nds) =>
-        nds.map((n) => ({
-          ...n,
-          data: { ...n.data, status: "idle" },
-        })),
-      );
-      setEdges((eds) =>
-        eds.map((e) => ({
-          ...e,
-          animated: false,
-        })),
-      );
-      return;
-    }
-
-    setEdges((eds) => eds.map((e) => ({ ...e, animated: true })));
-
-    let step = 0;
-    const interval = setInterval(() => {
-      setNodes((nds) =>
-        nds.map((n, idx) => {
-          if (idx < step) {
-            return { ...n, data: { ...n.data, status: "success" } };
-          }
-          if (idx === step) {
-            return { ...n, data: { ...n.data, status: "running" } };
-          }
-          return { ...n, data: { ...n.data, status: "idle" } };
-        }),
-      );
-
-      step++;
-      if (step > nodes.length) {
-        clearInterval(interval);
-        setNodes((nds) =>
-          nds.map((n) => ({
-            ...n,
-            data: { ...n.data, status: "success" },
-          })),
-        );
-        onExecutionComplete?.();
-      }
-    }, 700);
-
-    return () => clearInterval(interval);
-  }, [isExecuting, nodes.length, onExecutionComplete]);
-
   // Default data factory based on NodeType
   const getDefaultNodeData = useCallback(
     (item: NodePaletteItem): Partial<WorkflowNodeData> => {
@@ -352,10 +438,11 @@ function InnerEditorCanvas({
 
       switch (item.type) {
         case NodeType.INPUT_TRIGGER:
+          // User requirement: Enter text node should be empty by default
           return {
             ...base,
-            prompt: "Please analyze the user query and extract key entities.",
-            textValue: "Enter text here.",
+            prompt: "",
+            textValue: "",
           };
         case NodeType.BROWSER_TRIGGER:
           return {
@@ -381,7 +468,7 @@ function InnerEditorCanvas({
           return {
             ...base,
             model: "claude-3-5-sonnet-20241022",
-            prompt: "Summarize the previous step's output with clear bullet points.",
+            prompt: "Summarize the incoming information clearly.",
           };
         case NodeType.OPENAI_EXECUTER:
           return {
@@ -394,7 +481,7 @@ function InnerEditorCanvas({
           return {
             ...base,
             model: "gemini-1.5-flash",
-            prompt: "Generate a detailed overview of the provided content.",
+            prompt: "Generate an analysis of the provided content.",
           };
         case NodeType.POSTGRES_EXECUTER:
           return {
@@ -407,7 +494,7 @@ function InnerEditorCanvas({
             from: "notifications@kairo.dev",
             to: "user@example.com",
             subject: "Kairo Workflow Execution Update",
-            body: "Your automated pipeline completed successfully.",
+            body: "Your workflow executed successfully.",
           };
         case NodeType.SLACK_EXECUTER:
           return {
@@ -424,9 +511,10 @@ function InnerEditorCanvas({
             values: {},
           };
         case NodeType.OUTPUT:
+          // User requirement: No hardcoded status/ready
           return {
             ...base,
-            outputData: { status: 200, result: "ready" },
+            outputData: null,
           };
         default:
           return base;
@@ -435,7 +523,7 @@ function InnerEditorCanvas({
     [],
   );
 
-  // Add node dynamically from sidebar click
+  // Add node dynamically from sidebar
   const addNodeFromPalette = useCallback(
     (item: NodePaletteItem) => {
       const newNodeId = `node-${Date.now()}`;
@@ -483,19 +571,20 @@ function InnerEditorCanvas({
     [],
   );
 
+  // While connected, edge is solid. Only animated/running during execution
   const onConnect = useCallback(
     (connection: Connection) =>
       setEdges((eds) =>
         addEdge(
           {
             ...connection,
-            animated: true,
-            style: { stroke: "#2563EB", strokeWidth: 2 },
+            animated: isExecuting,
+            style: { stroke: isExecuting ? "#2563EB" : "#94A3B8", strokeWidth: 2 },
           },
           eds,
         ),
       ),
-    [],
+    [isExecuting],
   );
 
   // Drag and Drop from Sidebar
@@ -554,7 +643,7 @@ function InnerEditorCanvas({
     setIsDirty(false);
   }, []);
 
-  // Filter credentials matching the node type requirement
+  // Filter credentials matching node requirement
   const matchingCredentials = useMemo(() => {
     if (!selectedNode) return [];
     const type = selectedNode.type;
@@ -648,7 +737,7 @@ function InnerEditorCanvas({
                 "Configure node settings for execution."}
             </p>
 
-            {/* Credential Selection (for AI, DB, and Email nodes) */}
+            {/* Credential Selection */}
             {requiresCredential && (
               <div className="flex flex-col gap-1 p-3 bg-gray-50 rounded-xl border border-gray-200/80">
                 <div className="flex items-center justify-between">
@@ -890,20 +979,20 @@ function InnerEditorCanvas({
               </div>
             )}
 
-            {/* Input Trigger */}
+            {/* Input Trigger (Empty by default) */}
             {selectedNode.type === NodeType.INPUT_TRIGGER && (
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-semibold text-gray-700">Input Prompt / Text</label>
                 <textarea
                   rows={5}
-                  value={selectedNodeData.prompt || selectedNodeData.textValue || ""}
+                  value={selectedNodeData.prompt ?? selectedNodeData.textValue ?? ""}
                   onChange={(e) =>
                     updateSelectedNodeData({
                       prompt: e.target.value,
                       textValue: e.target.value,
                     })
                   }
-                  placeholder="Enter seed input or user prompt..."
+                  placeholder="Enter text here..."
                   className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 font-sans leading-relaxed"
                 />
                 <p className="text-[11px] text-gray-400">
@@ -925,7 +1014,7 @@ function InnerEditorCanvas({
                       browserUrl: e.target.value,
                     })
                   }
-                  placeholder="https://example.com"
+                  placeholder="https://www.google.com"
                   className="px-3 py-2 bg-white border border-gray-200 rounded-xl text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 font-mono"
                 />
                 <p className="text-[11px] text-gray-400 leading-tight">
@@ -1044,37 +1133,25 @@ function InnerEditorCanvas({
               </div>
             )}
 
-            {/* Output Node */}
+            {/* Output Node: Raw JSON Inspector in Drawer as requested */}
             {selectedNode.type === NodeType.OUTPUT && (
               <div className="flex flex-col gap-1.5">
                 <label className="text-xs font-semibold text-gray-700 flex items-center justify-between">
-                  <span>Output Result</span>
-                  <span className="text-[10px] text-emerald-600 font-semibold uppercase">
-                    Live Telemetry
+                  <span>Raw Execution Payload (JSON)</span>
+                  <span className="text-[10px] text-blue-600 font-semibold uppercase">
+                    Full Inspector
                   </span>
                 </label>
                 <textarea
-                  rows={5}
+                  rows={8}
+                  readOnly
                   value={
-                    typeof selectedNodeData.outputData === "string"
-                      ? selectedNodeData.outputData
-                      : JSON.stringify(
-                          selectedNodeData.outputData || {
-                            status: 200,
-                            result: "ready",
-                          },
-                          null,
-                          2,
-                        )
+                    selectedNodeData.outputData !== null && selectedNodeData.outputData !== undefined
+                      ? typeof selectedNodeData.outputData === "string"
+                        ? selectedNodeData.outputData
+                        : JSON.stringify(selectedNodeData.outputData, null, 2)
+                      : "No output payload received yet. Run workflow to inspect data."
                   }
-                  onChange={(e) => {
-                    try {
-                      const parsed = JSON.parse(e.target.value);
-                      updateSelectedNodeData({ outputData: parsed });
-                    } catch {
-                      updateSelectedNodeData({ outputData: e.target.value });
-                    }
-                  }}
                   className="px-3 py-2 bg-gray-900 text-emerald-400 font-mono text-xs border border-gray-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                 />
               </div>

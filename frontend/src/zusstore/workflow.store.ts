@@ -33,6 +33,7 @@ interface WorkflowState {
   error: string | null;
   hasLoaded: boolean;
   fetchWorkflows: (force?: boolean) => Promise<void>;
+  updateWorkflowStatus: (id: string, status: WorkflowItem["status"]) => void;
   setWorkflows: (workflows: WorkflowItem[]) => void;
   addWorkflow: (name: string, description: string) => Promise<any>;
   deleteWorkflow: (id: string) => Promise<void>;
@@ -48,7 +49,7 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
     try {
       set({ loading: !get().hasLoaded, error: null });
       const res = await getallWorkflow();
-      const list = res?.result?.workflows || [];
+      const list = res?.result?.workflows || res?.workflows || [];
       const mapped: WorkflowItem[] = list.map((w: any) => ({
         id: w.id,
         name: w.workflowName,
@@ -60,6 +61,13 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
     } catch (err: any) {
       set({ error: err.message || "Failed to load workflows", loading: false });
     }
+  },
+  updateWorkflowStatus: (id: string, status: WorkflowItem["status"]) => {
+    set((state) => ({
+      workflows: state.workflows.map((w) =>
+        w.id === id ? { ...w, status } : w
+      ),
+    }));
   },
   setWorkflows: (workflows) => set({ workflows }),
   addWorkflow: async (name: string, description: string) => {

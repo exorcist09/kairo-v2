@@ -21,10 +21,12 @@ export const executeWorkflowController = async (
     const result = await startWorkflowExecution(workflowId, userId);
 
     return res.status(202).json(result);
-  } catch (error) {
-    return res.status(400).json({
-      message:
-        error instanceof Error ? error.message : "Failed to execute workflow",
+  } catch (error: any) {
+    console.error("Execute workflow controller error:", error);
+    const message = error instanceof Error ? error.message : "Failed to execute workflow";
+    const status = message.includes("Token") || message.includes("jwt") ? 401 : 400;
+    return res.status(status).json({
+      message,
     });
   }
 };

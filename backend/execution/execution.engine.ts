@@ -1,14 +1,10 @@
 import { prisma } from "../lib/prisma";
 import { executorRegistry } from "./executor.registry";
 import type { ExecutionContext } from "./executors/node_context.schema";
+import { emitToWorkflow } from "../lib/socket";
 
 export const executeWorkflow = async (workflowId: string) => {
-  // Load the workflow definition from PostgreSQL.
-  //
-  // This gives us:
-  // - nodes
-  // - connections
-
+  // Load the workflow definition from PostgreSQL
   const workflow = await prisma.workflow.findUnique({
     where: {
       id: workflowId,
@@ -23,86 +19,109 @@ export const executeWorkflow = async (workflowId: string) => {
     throw new Error("Workflow not found");
   }
 
-  // Create temporary execution memory.
-  //
-  // This object exists only during this execution.
+  // Notify clients via socket that execution has started
+  emitToWorkflow(workflowId, "workflow:execution:start", { workflowId });
+
+  // Create temporary execution memory
   const context: ExecutionContext = {
     results: {},
     connections: workflow.connections,
   };
 
-  // Make node lookup easier.
-  //
-  // Instead of repeatedly searching workflow.nodes,
-  // we can directly find a node using its ID.
   const nodeMap = new Map(workflow.nodes.map((node) => [node.id, node]));
-
-  // Keeps track of nodes that have already executed.
   const executedNodes = new Set<string>();
 
   const executeNode = async (nodeId: string) => {
-    // Find the actual Node record.
     const node = nodeMap.get(nodeId);
 
     if (!node) {
       throw new Error(`Node ${nodeId} not found`);
     }
 
-    // Prevent executing the same node twice.
     if (executedNodes.has(node.id)) {
       return;
     }
 
-    // Find the executor for this node type.
-    const executor = executorRegistry[node.type]; //httpexecutor, inputexecutor etc
-
+    const executor = executorRegistry[node.type];
     if (!executor) {
-      throw new Error(`No executor found for node type: ${node.type}`);
+      const err = new Error(`No executor found for node type: ${node.type}`);
+      emitToWorkflow(workflowId, "workflow:node:error", {
+        workflowId,
+        nodeId: node.id,
+        nodeType: node.type,
+        error: err.message,
+      });
+      throw err;
     }
 
-    // Execute the actual node logic.
-    const result = await executor(node, context); //executor here is ->  httpexecutor, inputexecutor etc
+    // Emit node start event -> frontend turns border GREEN
+    emitToWorkflow(workflowId, "workflow:node:start", {
+      workflowId,
+      nodeId: node.id,
+      nodeType: node.type,
+    });
 
-    // Store the result using the node's ID.
-    //
-    // Example:
-    //
-    // context.results["previous node id"] = {
-    //   url: "...",
-    //   title: "...",
-    //   text: "..."
-    // };
-    context.results[node.id] = result;
+    try {
+      const result = await executor(node, context);
+      context.results[node.id] = result;
+      executedNodes.add(node.id);
 
-    // Mark this node as executed.
-    executedNodes.add(node.id);
+      // Emit node success event -> frontend turns border GREY & updates output data
+      emitToWorkflow(workflowId, "workflow:node:success", {
+        workflowId,
+        nodeId: node.id,
+        nodeType: node.type,
+        result,
+      });
 
-    // Find all connections leaving this node.
-    const outgoingConnections = workflow.connections.filter(
-      (connection) => connection.fromNodeId === node.id,
-    );
+      // Find all connections leaving this node
+      const outgoingConnections = workflow.connections.filter(
+        (connection) => connection.fromNodeId === node.id,
+      );
 
-    // Execute the connected nodes.
-    for (const connection of outgoingConnections) {
-      await executeNode(connection.toNodeId);
+      // Execute downstream connected nodes
+      for (const connection of outgoingConnections) {
+        await executeNode(connection.toNodeId);
+      }
+    } catch (error: any) {
+      const errMsg = error instanceof Error ? error.message : "Node execution failed";
+      // Emit node error event -> frontend turns border RED
+      emitToWorkflow(workflowId, "workflow:node:error", {
+        workflowId,
+        nodeId: node.id,
+        nodeType: node.type,
+        error: errMsg,
+      });
+      throw error;
     }
   };
 
-  // Find nodes that have no incoming connection.
-  //
-  // These are the starting points of the workflow.
-  const startingNodes = workflow.nodes.filter(
-    (node) =>
-      !workflow.connections.some(
-        (connection) => connection.toNodeId === node.id,
-      ),
-  );
+  try {
+    // Find starting nodes (nodes with no incoming connection)
+    const startingNodes = workflow.nodes.filter(
+      (node) =>
+        !workflow.connections.some(
+          (connection) => connection.toNodeId === node.id,
+        ),
+    );
 
-  // Start executing the workflow.
-  for (const node of startingNodes) {
-    await executeNode(node.id);
+    for (const node of startingNodes) {
+      await executeNode(node.id);
+    }
+
+    // Emit workflow complete event
+    emitToWorkflow(workflowId, "workflow:execution:complete", {
+      workflowId,
+      results: context.results,
+    });
+
+    return context.results;
+  } catch (error: any) {
+    const errMsg = error instanceof Error ? error.message : "Workflow execution failed";
+    emitToWorkflow(workflowId, "workflow:execution:failed", {
+      workflowId,
+      error: errMsg,
+    });
+    throw error;
   }
-
-  // Return all node results.
-  return context.results;
 };
