@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useState, useRef, useEffect, useMemo } from "react";
+import Link from "next/link";
 import {
   ReactFlow,
   Controls,
@@ -23,38 +24,104 @@ import "@xyflow/react/dist/style.css";
 import { WorkflowNodeData } from "./CustomNode";
 import { NodePaletteItem } from "./sidebar/EditorSidebar";
 import { NodeType } from "@/utils/constants";
+import { getCredentials } from "@/api/credentials.api";
 import {
   X,
   Trash,
   FloppyDiskBackIcon,
   CaretDown,
+  Key,
+  Sliders,
+  Sparkle,
+  Database,
+  EnvelopeSimple,
+  Globe,
+  TextT,
+  Terminal,
 } from "@phosphor-icons/react";
 
 interface EditorCanvasProps {
   workflowId: string;
+  initialNodes?: Node[];
+  initialEdges?: Edge[];
   isExecuting: boolean;
   onExecutionComplete?: () => void;
   externalAddNodeRef?: React.MutableRefObject<
     ((item: NodePaletteItem) => void) | null
   >;
+  externalSaveRef?: React.MutableRefObject<
+    (() => { nodes: any[]; connections: any[] }) | null
+  >;
 }
+
+const CLAUDE_MODELS = [
+  { value: "claude-3-5-sonnet-20241022", label: "Claude 3.5 Sonnet (Recommended)" },
+  { value: "claude-3-5-haiku-20241022", label: "Claude 3.5 Haiku (Fastest)" },
+  { value: "claude-3-opus-20240229", label: "Claude 3 Opus" },
+];
+
+const OPENAI_MODELS = [
+  { value: "gpt-4o", label: "GPT-4o (Omni Recommended)" },
+  { value: "gpt-4o-mini", label: "GPT-4o Mini (Fast & Cheap)" },
+  { value: "gpt-4-turbo", label: "GPT-4 Turbo" },
+];
+
+const GEMINI_MODELS = [
+  { value: "gemini-1.5-flash", label: "Gemini 1.5 Flash (Fast)" },
+  { value: "gemini-1.5-pro", label: "Gemini 1.5 Pro (Reasoning)" },
+  { value: "gemini-2.0-flash-exp", label: "Gemini 2.0 Flash (Experimental)" },
+];
 
 function InnerEditorCanvas({
   workflowId,
+  initialNodes = [],
+  initialEdges = [],
   isExecuting,
   onExecutionComplete,
   externalAddNodeRef,
+  externalSaveRef,
 }: EditorCanvasProps) {
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const { screenToFlowPosition } = useReactFlow();
 
-  const [nodes, setNodes] = useState<Node[]>([]);
-  const [edges, setEdges] = useState<Edge[]>([]);
+  const [nodes, setNodes] = useState<Node[]>(initialNodes);
+  const [edges, setEdges] = useState<Edge[]>(initialEdges);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [isDirty, setIsDirty] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
+  const [credentials, setCredentials] = useState<Array<{ id: string; type: string; name: string }>>([]);
 
-  // Directly derive selectedNode from live nodes state to always reflect changes
+  // Fetch available user credentials to populate dropdowns
+  useEffect(() => {
+    let mounted = true;
+    getCredentials()
+      .then((res) => {
+        if (mounted && res?.credentials) {
+          setCredentials(res.credentials);
+        }
+      })
+      .catch((err) => {
+        console.warn("Failed to load user credentials for editor:", err);
+      });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  // Sync initial nodes/edges if provided and current canvas is empty
+  useEffect(() => {
+    if (initialNodes.length > 0 && nodes.length === 0) {
+      setNodes(initialNodes);
+    }
+  }, [initialNodes]);
+
+  useEffect(() => {
+    if (initialEdges.length > 0 && edges.length === 0) {
+      setEdges(initialEdges);
+    }
+  }, [initialEdges]);
+
+  // Derive selectedNode from live nodes state
   const selectedNode = useMemo(
     () => nodes.find((n) => n.id === selectedNodeId) || null,
     [nodes, selectedNodeId],
@@ -83,28 +150,21 @@ function InnerEditorCanvas({
     setIsDirty(false);
   }, []);
 
-  // Single step execution simulation
-  const handleSingleExecute = useCallback((id: string) => {
-    setNodes((nds) =>
-      nds.map((n) =>
-        n.id === id ? { ...n, data: { ...n.data, status: "running" } } : n,
-      ),
-    );
-    setTimeout(() => {
-      setNodes((nds) =>
-        nds.map((n) =>
-          n.id === id ? { ...n, data: { ...n.data, status: "success" } } : n,
-        ),
-      );
-    }, 900);
-  }, []);
-
-  // Handle text change inside a node or dialog
+  // Text change callback from node
   const handleTextChange = useCallback(
     (id: string, text: string) => {
       setNodes((nds) =>
         nds.map((n) =>
-          n.id === id ? { ...n, data: { ...n.data, textValue: text } } : n,
+          n.id === id
+            ? {
+                ...n,
+                data: {
+                  ...n.data,
+                  prompt: text,
+                  textValue: text,
+                },
+              }
+            : n,
         ),
       );
       if (selectedNodeId === id) {
@@ -114,12 +174,21 @@ function InnerEditorCanvas({
     [selectedNodeId],
   );
 
-  // Handle HTTP method change from node or dialog
+  // Method change callback from node
   const handleMethodChange = useCallback(
     (id: string, method: string) => {
       setNodes((nds) =>
         nds.map((n) =>
-          n.id === id ? { ...n, data: { ...n.data, httpMethod: method } } : n,
+          n.id === id
+            ? {
+                ...n,
+                data: {
+                  ...n.data,
+                  method,
+                  httpMethod: method,
+                },
+              }
+            : n,
         ),
       );
       if (selectedNodeId === id) {
@@ -129,14 +198,14 @@ function InnerEditorCanvas({
     [selectedNodeId],
   );
 
-  // Save feedback in dialog
+  // Save feedback in drawer
   const handleSaveDialog = useCallback(() => {
     setIsSaved(true);
     setIsDirty(false);
     setTimeout(() => setIsSaved(false), 1500);
   }, []);
 
-  // Update selected node data and mark form dirty
+  // Update selected node data
   const updateSelectedNodeData = useCallback(
     (updates: Partial<WorkflowNodeData>) => {
       if (!selectedNodeId) return;
@@ -152,6 +221,52 @@ function InnerEditorCanvas({
     [selectedNodeId],
   );
 
+  // Expose serialization to parent for saving canvas
+  useEffect(() => {
+    if (externalSaveRef) {
+      externalSaveRef.current = () => {
+        const backendNodes = nodes.map((node) => {
+          const data = (node.data || {}) as unknown as WorkflowNodeData;
+          return {
+            id: node.id,
+            name: data.title || node.type || "Node",
+            type: (node.type || NodeType.OUTPUT) as NodeType,
+            position: node.position,
+            data: {
+              prompt: data.prompt || data.textValue || "",
+              urlForm: data.urlForm || data.browserUrl || "",
+              url: data.url || data.endpointUrl || "",
+              method: data.method || data.httpMethod || "GET",
+              headers: data.headers || {},
+              body: data.body || (data.requestBody ? safeParseJson(data.requestBody) : {}),
+              credentialId: data.credentialId || "",
+              model: data.model || "",
+              temperature: typeof data.temperature === "number" ? data.temperature : 0.7,
+              query: data.query || "",
+              from: data.from || "notifications@kairo.dev",
+              to: data.to || "",
+              subject: data.subject || "",
+              formUrl: data.formUrl || "",
+              formId: data.formId || "",
+              values: data.values || {},
+              channel: data.channel || "",
+              message: data.message || "",
+            },
+          };
+        });
+
+        const backendConnections = edges.map((edge) => ({
+          fromNodeId: edge.source,
+          toNodeId: edge.target,
+          fromOutput: edge.sourceHandle || "main",
+          toInput: edge.targetHandle || "main",
+        }));
+
+        return { nodes: backendNodes, connections: backendConnections };
+      };
+    }
+  }, [nodes, edges, externalSaveRef]);
+
   // Inject callbacks into node data
   useEffect(() => {
     setNodes((nds) =>
@@ -161,7 +276,6 @@ function InnerEditorCanvas({
           ...n.data,
           onDelete: handleDeleteNode,
           onOpenSettings: handleOpenSettings,
-          onExecute: handleSingleExecute,
           onChangeText: handleTextChange,
           onChangeMethod: handleMethodChange,
         },
@@ -170,12 +284,11 @@ function InnerEditorCanvas({
   }, [
     handleDeleteNode,
     handleOpenSettings,
-    handleSingleExecute,
     handleTextChange,
     handleMethodChange,
   ]);
 
-  // Handle execution simulation
+  // Animate nodes during execution
   useEffect(() => {
     if (!isExecuting) {
       setNodes((nds) =>
@@ -193,7 +306,6 @@ function InnerEditorCanvas({
       return;
     }
 
-    // Step-by-step node execution animation
     setEdges((eds) => eds.map((e) => ({ ...e, animated: true })));
 
     let step = 0;
@@ -221,55 +333,127 @@ function InnerEditorCanvas({
         );
         onExecutionComplete?.();
       }
-    }, 600);
+    }, 700);
 
     return () => clearInterval(interval);
   }, [isExecuting, nodes.length, onExecutionComplete]);
 
-  // Function to add node dynamically (called from sidebar click)
+  // Default data factory based on NodeType
+  const getDefaultNodeData = useCallback(
+    (item: NodePaletteItem): Partial<WorkflowNodeData> => {
+      const base: Partial<WorkflowNodeData> = {
+        title: item.title,
+        subtitle: item.description || item.subtitle || "",
+        category: item.category,
+        iconName: item.iconName || "generic",
+        type: item.type,
+        status: "idle",
+      };
+
+      switch (item.type) {
+        case NodeType.INPUT_TRIGGER:
+          return {
+            ...base,
+            prompt: "Please analyze the user query and extract key entities.",
+            textValue: "Enter text here.",
+          };
+        case NodeType.BROWSER_TRIGGER:
+          return {
+            ...base,
+            urlForm: "https://www.google.com",
+            browserUrl: "https://www.google.com",
+          };
+        case NodeType.HTTP_TRIGGER:
+          return {
+            ...base,
+            url: "https://jsonplaceholder.typicode.com/posts/1",
+            endpointUrl: "https://jsonplaceholder.typicode.com/posts/1",
+            method: "GET",
+            httpMethod: "GET",
+            headers: {},
+            body: {},
+          };
+        case NodeType.WEBHOOK_TRIGGER:
+          return {
+            ...base,
+          };
+        case NodeType.CLAUDE_EXECUTER:
+          return {
+            ...base,
+            model: "claude-3-5-sonnet-20241022",
+            prompt: "Summarize the previous step's output with clear bullet points.",
+          };
+        case NodeType.OPENAI_EXECUTER:
+          return {
+            ...base,
+            model: "gpt-4o",
+            prompt: "Analyze the incoming data and produce a structured response.",
+            temperature: 0.7,
+          };
+        case NodeType.GEMINI_EXECUTER:
+          return {
+            ...base,
+            model: "gemini-1.5-flash",
+            prompt: "Generate a detailed overview of the provided content.",
+          };
+        case NodeType.POSTGRES_EXECUTER:
+          return {
+            ...base,
+            query: "SELECT id, email, created_at FROM users ORDER BY created_at DESC LIMIT 5;",
+          };
+        case NodeType.EMAIL_EXECUTER:
+          return {
+            ...base,
+            from: "notifications@kairo.dev",
+            to: "user@example.com",
+            subject: "Kairo Workflow Execution Update",
+            body: "Your automated pipeline completed successfully.",
+          };
+        case NodeType.SLACK_EXECUTER:
+          return {
+            ...base,
+            channel: "#general",
+            message: "Automation step executed successfully!",
+          };
+        case NodeType.GOOGLE_FORM_EXECUTER:
+          return {
+            ...base,
+            formUrl: "https://docs.google.com/forms/d/e/.../viewform",
+            formId: "",
+            fields: [],
+            values: {},
+          };
+        case NodeType.OUTPUT:
+          return {
+            ...base,
+            outputData: { status: 200, result: "ready" },
+          };
+        default:
+          return base;
+      }
+    },
+    [],
+  );
+
+  // Add node dynamically from sidebar click
   const addNodeFromPalette = useCallback(
     (item: NodePaletteItem) => {
       const newNodeId = `node-${Date.now()}`;
       const lastNode = nodes[nodes.length - 1];
       const position = lastNode
-        ? { x: lastNode.position.x + 240, y: lastNode.position.y }
-        : { x: 200, y: 200 };
+        ? { x: lastNode.position.x + 220, y: lastNode.position.y }
+        : { x: 180, y: 180 };
 
-      const isBrowser =
-        item.iconName === "browser" || item.title === "Browser Trigger";
-      const isHttp =
-        item.type === NodeType.HTTP_REQUEST ||
-        item.iconName === "http" ||
-        item.title === "HTTP Request";
-      const isOutput =
-        item.type === NodeType.OUTPUT || item.iconName === "diamond" || item.iconName === "square";
-      const isText =
-        item.type === NodeType.TEXT || item.iconName === "text";
-      const isGoogleForm =
-        item.type === NodeType.GOOGLE_FORM ||
-        item.iconName === "google_form";
+      const defaults = getDefaultNodeData(item);
 
       const newNode: Node = {
         id: newNodeId,
         type: item.type,
         position,
         data: {
-          title: item.title,
-          subtitle: item.description || item.subtitle || "",
-          category: item.category,
-          iconName: item.iconName || (isBrowser ? "browser" : "webhook"),
-          type: item.type,
-          browserUrl: isBrowser ? "" : undefined,
-          httpMethod: isHttp ? "GET" : undefined,
-          endpointUrl: isHttp ? "" : undefined,
-          requestBody: isHttp ? "" : undefined,
-          outputData: isOutput ? { status: 200, result: "ready" } : undefined,
-          textValue: isText ? "" : undefined,
-          formUrl: isGoogleForm ? "" : undefined,
-          status: "idle",
+          ...defaults,
           onDelete: handleDeleteNode,
           onOpenSettings: handleOpenSettings,
-          onExecute: handleSingleExecute,
           onChangeText: handleTextChange,
           onChangeMethod: handleMethodChange,
         },
@@ -277,17 +461,10 @@ function InnerEditorCanvas({
 
       setNodes((nds) => [...nds, newNode]);
     },
-    [
-      nodes,
-      handleDeleteNode,
-      handleOpenSettings,
-      handleSingleExecute,
-      handleTextChange,
-      handleMethodChange,
-    ],
+    [nodes, getDefaultNodeData, handleDeleteNode, handleOpenSettings, handleTextChange, handleMethodChange],
   );
 
-  // Expose addNode method to parent via ref
+  // Connect ref to sidebar click
   useEffect(() => {
     if (externalAddNodeRef) {
       externalAddNodeRef.current = addNodeFromPalette;
@@ -321,7 +498,7 @@ function InnerEditorCanvas({
     [],
   );
 
-  // HTML5 Drag and Drop from Sidebar
+  // Drag and Drop from Sidebar
   const onDragOver = useCallback((event: React.DragEvent) => {
     event.preventDefault();
     event.dataTransfer.dropEffect = "move";
@@ -340,41 +517,16 @@ function InnerEditorCanvas({
         y: event.clientY,
       });
 
-      const isBrowser =
-        item.iconName === "browser" || item.title === "Browser Trigger";
-      const isHttp =
-        item.type === NodeType.HTTP_REQUEST ||
-        item.iconName === "http" ||
-        item.title === "HTTP Request";
-      const isOutput =
-        item.type === NodeType.OUTPUT || item.iconName === "diamond" || item.iconName === "square";
-      const isText =
-        item.type === NodeType.TEXT || item.iconName === "text";
-      const isGoogleForm =
-        item.type === NodeType.GOOGLE_FORM ||
-        item.iconName === "google_form";
+      const defaults = getDefaultNodeData(item);
 
       const newNode: Node = {
         id: `node-${Date.now()}`,
         type: item.type,
         position,
         data: {
-          title: item.title,
-          subtitle: item.description || item.subtitle || "",
-          category: item.category,
-          iconName: item.iconName || (isBrowser ? "browser" : "webhook"),
-          type: item.type,
-          browserUrl: isBrowser ? "" : undefined,
-          httpMethod: isHttp ? "GET" : undefined,
-          endpointUrl: isHttp ? "" : undefined,
-          requestBody: isHttp ? "" : undefined,
-          outputData: isOutput ? { status: 200, result: "ready" } : undefined,
-          textValue: isText ? "" : undefined,
-          formUrl: isGoogleForm ? "" : undefined,
-          status: "idle",
+          ...defaults,
           onDelete: handleDeleteNode,
           onOpenSettings: handleOpenSettings,
-          onExecute: handleSingleExecute,
           onChangeText: handleTextChange,
           onChangeMethod: handleMethodChange,
         },
@@ -384,9 +536,9 @@ function InnerEditorCanvas({
     },
     [
       screenToFlowPosition,
+      getDefaultNodeData,
       handleDeleteNode,
       handleOpenSettings,
-      handleSingleExecute,
       handleTextChange,
       handleMethodChange,
     ],
@@ -402,54 +554,31 @@ function InnerEditorCanvas({
     setIsDirty(false);
   }, []);
 
-  // Determine node type in dialog
-  const isHttpNode = Boolean(
-    selectedNode &&
-      selectedNodeData &&
-      (selectedNodeData.iconName === "http" ||
-        selectedNode.type === NodeType.HTTP_REQUEST ||
-        selectedNodeData.title === "HTTP Request" ||
-        (selectedNode.type === NodeType.HTTP_TRIGGER &&
-          selectedNodeData.title !== "Browser Trigger" &&
-          selectedNodeData.iconName !== "browser")),
-  );
+  // Filter credentials matching the node type requirement
+  const matchingCredentials = useMemo(() => {
+    if (!selectedNode) return [];
+    const type = selectedNode.type;
+    return credentials.filter((c) => {
+      const cType = c.type.toLowerCase();
+      if (type === NodeType.CLAUDE_EXECUTER) return cType.includes("claude") || cType.includes("anthropic");
+      if (type === NodeType.OPENAI_EXECUTER) return cType.includes("openai") || cType.includes("gpt");
+      if (type === NodeType.GEMINI_EXECUTER) return cType.includes("gemini") || cType.includes("google");
+      if (type === NodeType.POSTGRES_EXECUTER) return cType.includes("postgres") || cType.includes("sql") || cType.includes("database");
+      if (type === NodeType.EMAIL_EXECUTER) return cType.includes("email") || cType.includes("smtp");
+      if (type === NodeType.SLACK_EXECUTER) return cType.includes("slack");
+      return true;
+    });
+  }, [selectedNode, credentials]);
 
-  const isBrowserNode = Boolean(
+  const requiresCredential =
     selectedNode &&
-      selectedNodeData &&
-      !isHttpNode &&
-      (selectedNodeData.iconName === "browser" ||
-        selectedNodeData.title === "Browser Trigger" ||
-        selectedNode.type === NodeType.HTTP_TRIGGER),
-  );
-
-  const isOutputNode = Boolean(
-    selectedNode &&
-      selectedNodeData &&
-      (selectedNodeData.iconName === "diamond" ||
-        selectedNodeData.iconName === "square" ||
-        selectedNode.type === NodeType.OUTPUT),
-  );
-
-  const isTextNode = Boolean(
-    selectedNode &&
-      selectedNodeData &&
-      (selectedNodeData.iconName === "text" ||
-        selectedNode.type === NodeType.TEXT),
-  );
-
-  const isGoogleFormNode = Boolean(
-    selectedNode &&
-      selectedNodeData &&
-      (selectedNodeData.iconName === "google_form" ||
-        selectedNode.type === NodeType.GOOGLE_FORM),
-  );
-
-  const isPostOrPatchOrPut =
-    isHttpNode &&
-    ["POST", "PUT", "PATCH"].includes(
-      (selectedNodeData?.httpMethod || "GET").toUpperCase(),
-    );
+    [
+      NodeType.CLAUDE_EXECUTER,
+      NodeType.OPENAI_EXECUTER,
+      NodeType.GEMINI_EXECUTER,
+      NodeType.POSTGRES_EXECUTER,
+      NodeType.EMAIL_EXECUTER,
+    ].includes(selectedNode.type as NodeType);
 
   return (
     <div ref={reactFlowWrapper} className="w-full h-full relative select-none">
@@ -488,8 +617,8 @@ function InnerEditorCanvas({
 
       {/* Selected Node Configuration Drawer / Dialog */}
       {selectedNode && selectedNodeData && (
-        <div className="absolute top-4 right-4 w-84 bg-white rounded-2xl border border-gray-200 shadow-xl p-5 z-40 flex flex-col gap-4 animate-in fade-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto">
-          {/* Header: Title and Category pill side-by-side */}
+        <div className="absolute top-4 right-4 w-96 bg-white rounded-2xl border border-gray-200 shadow-xl p-5 z-40 flex flex-col gap-4 animate-in fade-in zoom-in-95 duration-150 max-h-[92vh] overflow-y-auto">
+          {/* Header */}
           <div className="flex items-center justify-between pb-3 border-b border-gray-100">
             <div className="flex items-center gap-2 min-w-0">
               <h3 className="text-sm font-bold text-gray-900 truncate">
@@ -511,27 +640,313 @@ function InnerEditorCanvas({
             </button>
           </div>
 
-          <div className="flex flex-col gap-3">
-            {/* Description (Normal text paragraph) */}
+          <div className="flex flex-col gap-3.5">
+            {/* Description */}
             <p className="text-xs text-gray-500 leading-relaxed">
               {selectedNodeData.subtitle ||
                 selectedNodeData.description ||
-                "Configure node settings."}
+                "Configure node settings for execution."}
             </p>
 
-            {/* HTTP Request Dialog: Method dropdown + Endpoint URL + Request Body (for POST, PUT, PATCH) */}
-            {isHttpNode ? (
-              <div className="flex flex-col gap-3">
-                {/* Method */}
-                <div className="flex flex-col gap-1">
-                  <label className="text-xs font-semibold text-gray-700">
-                    Method
+            {/* Credential Selection (for AI, DB, and Email nodes) */}
+            {requiresCredential && (
+              <div className="flex flex-col gap-1 p-3 bg-gray-50 rounded-xl border border-gray-200/80">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-semibold text-gray-700 flex items-center gap-1.5">
+                    <Key className="w-3.5 h-3.5 text-blue-600" />
+                    <span>Select Credential</span>
                   </label>
+                  <Link
+                    href="/credentials"
+                    target="_blank"
+                    className="text-[10px] text-blue-600 hover:underline font-medium"
+                  >
+                    Manage Keys &rarr;
+                  </Link>
+                </div>
+
+                <div className="relative mt-1">
+                  <select
+                    value={selectedNodeData.credentialId || ""}
+                    onChange={(e) =>
+                      updateSelectedNodeData({ credentialId: e.target.value })
+                    }
+                    className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 appearance-none pr-8 cursor-pointer"
+                  >
+                    <option value="">-- Choose Credential --</option>
+                    {matchingCredentials.length > 0 ? (
+                      matchingCredentials.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.name} ({c.type})
+                        </option>
+                      ))
+                    ) : (
+                      credentials.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.name} ({c.type})
+                        </option>
+                      ))
+                    )}
+                  </select>
+                  <CaretDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+                </div>
+                {!selectedNodeData.credentialId && (
+                  <p className="text-[11px] text-amber-600 mt-0.5">
+                    Required: This executor will fail unless a valid credential is selected.
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Claude Executor Settings */}
+            {selectedNode.type === NodeType.CLAUDE_EXECUTER && (
+              <div className="flex flex-col gap-3">
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-semibold text-gray-700">Claude Model</label>
                   <div className="relative">
                     <select
-                      value={selectedNodeData.httpMethod || "GET"}
+                      value={selectedNodeData.model || "claude-3-5-sonnet-20241022"}
+                      onChange={(e) => updateSelectedNodeData({ model: e.target.value })}
+                      className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 appearance-none pr-8 cursor-pointer"
+                    >
+                      {CLAUDE_MODELS.map((m) => (
+                        <option key={m.value} value={m.value}>
+                          {m.label}
+                        </option>
+                      ))}
+                    </select>
+                    <CaretDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-semibold text-gray-700">Prompt</label>
+                  <textarea
+                    rows={4}
+                    value={selectedNodeData.prompt || ""}
+                    onChange={(e) => updateSelectedNodeData({ prompt: e.target.value })}
+                    placeholder="Enter prompt for Claude (e.g. Summarize previous result)..."
+                    className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-sans leading-relaxed"
+                  />
+                  <p className="text-[11px] text-gray-400">
+                    Will receive context from connected nodes automatically.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* OpenAI Executor Settings */}
+            {selectedNode.type === NodeType.OPENAI_EXECUTER && (
+              <div className="flex flex-col gap-3">
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-semibold text-gray-700">OpenAI Model</label>
+                  <div className="relative">
+                    <select
+                      value={selectedNodeData.model || "gpt-4o"}
+                      onChange={(e) => updateSelectedNodeData({ model: e.target.value })}
+                      className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 appearance-none pr-8 cursor-pointer"
+                    >
+                      {OPENAI_MODELS.map((m) => (
+                        <option key={m.value} value={m.value}>
+                          {m.label}
+                        </option>
+                      ))}
+                    </select>
+                    <CaretDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <div className="flex justify-between items-center text-xs font-semibold text-gray-700">
+                    <span>Temperature</span>
+                    <span className="font-mono text-blue-600">{selectedNodeData.temperature ?? 0.7}</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.05"
+                    value={selectedNodeData.temperature ?? 0.7}
+                    onChange={(e) => updateSelectedNodeData({ temperature: parseFloat(e.target.value) })}
+                    className="w-full accent-blue-600 cursor-pointer"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-semibold text-gray-700">Prompt</label>
+                  <textarea
+                    rows={4}
+                    value={selectedNodeData.prompt || ""}
+                    onChange={(e) => updateSelectedNodeData({ prompt: e.target.value })}
+                    placeholder="Enter prompt for OpenAI..."
+                    className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-sans leading-relaxed"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Google Gemini Executor Settings */}
+            {selectedNode.type === NodeType.GEMINI_EXECUTER && (
+              <div className="flex flex-col gap-3">
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-semibold text-gray-700">Gemini Model</label>
+                  <div className="relative">
+                    <select
+                      value={selectedNodeData.model || "gemini-1.5-flash"}
+                      onChange={(e) => updateSelectedNodeData({ model: e.target.value })}
+                      className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 appearance-none pr-8 cursor-pointer"
+                    >
+                      {GEMINI_MODELS.map((m) => (
+                        <option key={m.value} value={m.value}>
+                          {m.label}
+                        </option>
+                      ))}
+                    </select>
+                    <CaretDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-semibold text-gray-700">Prompt</label>
+                  <textarea
+                    rows={4}
+                    value={selectedNodeData.prompt || ""}
+                    onChange={(e) => updateSelectedNodeData({ prompt: e.target.value })}
+                    placeholder="Enter prompt for Gemini..."
+                    className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-sans leading-relaxed"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* PostgreSQL Database Executor */}
+            {selectedNode.type === NodeType.POSTGRES_EXECUTER && (
+              <div className="flex flex-col gap-3">
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-semibold text-gray-700 flex items-center justify-between">
+                    <span>SQL Query</span>
+                    <span className="text-[10px] text-gray-400">PostgreSQL syntax</span>
+                  </label>
+                  <textarea
+                    rows={5}
+                    value={selectedNodeData.query || ""}
+                    onChange={(e) => updateSelectedNodeData({ query: e.target.value })}
+                    placeholder="SELECT * FROM users LIMIT 10;"
+                    className="px-3 py-2 bg-gray-900 text-emerald-400 border border-gray-800 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/20 font-mono leading-relaxed"
+                  />
+                  <p className="text-[11px] text-gray-400 leading-tight">
+                    If left blank or chained after an AI node, the previous node&apos;s output SQL will be executed.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Email Executor */}
+            {selectedNode.type === NodeType.EMAIL_EXECUTER && (
+              <div className="flex flex-col gap-2.5">
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-semibold text-gray-700">From Address</label>
+                  <input
+                    type="email"
+                    value={selectedNodeData.from || ""}
+                    onChange={(e) => updateSelectedNodeData({ from: e.target.value })}
+                    placeholder="notifications@kairo.dev"
+                    className="px-3 py-2 bg-white border border-gray-200 rounded-xl text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-semibold text-gray-700">Recipient Email (To)</label>
+                  <input
+                    type="email"
+                    value={selectedNodeData.to || ""}
+                    onChange={(e) => updateSelectedNodeData({ to: e.target.value })}
+                    placeholder="recipient@example.com"
+                    className="px-3 py-2 bg-white border border-gray-200 rounded-xl text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-semibold text-gray-700">Subject</label>
+                  <input
+                    type="text"
+                    value={selectedNodeData.subject || ""}
+                    onChange={(e) => updateSelectedNodeData({ subject: e.target.value })}
+                    placeholder="Subject line..."
+                    className="px-3 py-2 bg-white border border-gray-200 rounded-xl text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-semibold text-gray-700">Email Body</label>
+                  <textarea
+                    rows={3}
+                    value={typeof selectedNodeData.body === "string" ? selectedNodeData.body : ""}
+                    onChange={(e) => updateSelectedNodeData({ body: e.target.value })}
+                    placeholder="Optional: will use previous step result if left empty..."
+                    className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Input Trigger */}
+            {selectedNode.type === NodeType.INPUT_TRIGGER && (
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-semibold text-gray-700">Input Prompt / Text</label>
+                <textarea
+                  rows={5}
+                  value={selectedNodeData.prompt || selectedNodeData.textValue || ""}
+                  onChange={(e) =>
+                    updateSelectedNodeData({
+                      prompt: e.target.value,
+                      textValue: e.target.value,
+                    })
+                  }
+                  placeholder="Enter seed input or user prompt..."
+                  className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 font-sans leading-relaxed"
+                />
+                <p className="text-[11px] text-gray-400">
+                  Initial input injected into the workflow execution graph.
+                </p>
+              </div>
+            )}
+
+            {/* Browser Trigger */}
+            {selectedNode.type === NodeType.BROWSER_TRIGGER && (
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-semibold text-gray-700">Target URL to Scrape</label>
+                <input
+                  type="url"
+                  value={selectedNodeData.urlForm || selectedNodeData.browserUrl || ""}
+                  onChange={(e) =>
+                    updateSelectedNodeData({
+                      urlForm: e.target.value,
+                      browserUrl: e.target.value,
+                    })
+                  }
+                  placeholder="https://example.com"
+                  className="px-3 py-2 bg-white border border-gray-200 rounded-xl text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 font-mono"
+                />
+                <p className="text-[11px] text-gray-400 leading-tight">
+                  Playwright headless Chromium will visit this URL and extract page title &amp; text body.
+                </p>
+              </div>
+            )}
+
+            {/* HTTP Trigger / Outbound Request */}
+            {selectedNode.type === NodeType.HTTP_TRIGGER && (
+              <div className="flex flex-col gap-3">
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-semibold text-gray-700">HTTP Method</label>
+                  <div className="relative">
+                    <select
+                      value={selectedNodeData.method || selectedNodeData.httpMethod || "GET"}
                       onChange={(e) =>
-                        updateSelectedNodeData({ httpMethod: e.target.value })
+                        updateSelectedNodeData({
+                          method: e.target.value,
+                          httpMethod: e.target.value,
+                        })
                       }
                       className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 appearance-none pr-8 cursor-pointer"
                     >
@@ -543,78 +958,99 @@ function InnerEditorCanvas({
                     </select>
                     <CaretDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
                   </div>
-                  <p className="text-[11px] text-gray-400">
-                    The HTTP method to use for this request
-                  </p>
                 </div>
 
-                {/* Endpoint URL */}
                 <div className="flex flex-col gap-1">
-                  <label className="text-xs font-semibold text-gray-700">
-                    Endpoint URL
-                  </label>
+                  <label className="text-xs font-semibold text-gray-700">Request URL</label>
                   <input
-                    type="text"
-                    value={selectedNodeData.endpointUrl ?? ""}
+                    type="url"
+                    value={selectedNodeData.url || selectedNodeData.endpointUrl || ""}
                     onChange={(e) =>
-                      updateSelectedNodeData({ endpointUrl: e.target.value })
+                      updateSelectedNodeData({
+                        url: e.target.value,
+                        endpointUrl: e.target.value,
+                      })
                     }
-                    placeholder="https://api.example.com/users/{{httpResponse.data.id}}"
-                    className="px-3 py-2 bg-white border border-gray-200 rounded-xl text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-mono"
+                    placeholder="https://api.example.com/data"
+                    className="px-3 py-2 bg-white border border-gray-200 rounded-xl text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 font-mono"
                   />
-                  <p className="text-[11px] text-gray-400 leading-tight">
-                    Static URL or use &#123;&#123;variables&#125;&#125; for simple
-                    values or &#123;&#123;json variable&#125;&#125; to stringify
-                    objects
-                  </p>
                 </div>
 
-                {/* Request Body (only for POST, PUT, PATCH) */}
-                {isPostOrPatchOrPut && (
+                {["POST", "PUT", "PATCH"].includes(
+                  (selectedNodeData.method || selectedNodeData.httpMethod || "GET").toUpperCase(),
+                ) && (
                   <div className="flex flex-col gap-1">
-                    <label className="text-xs font-semibold text-gray-700">
-                      Request Body
-                    </label>
+                    <label className="text-xs font-semibold text-gray-700">JSON Body</label>
                     <textarea
-                      rows={5}
-                      value={selectedNodeData.requestBody ?? ""}
-                      onChange={(e) =>
-                        updateSelectedNodeData({ requestBody: e.target.value })
+                      rows={4}
+                      value={
+                        typeof selectedNodeData.body === "string"
+                          ? selectedNodeData.body
+                          : selectedNodeData.requestBody ||
+                            (selectedNodeData.body ? JSON.stringify(selectedNodeData.body, null, 2) : "{}")
                       }
-                      placeholder='{\n  "userId": "{{httpResponse.data.id}}",\n  "name": "{{httpResponse.data.name}}",\n  "items": "{{httpResponse.data.items}}"\n}'
-                      className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-mono leading-relaxed"
+                      onChange={(e) =>
+                        updateSelectedNodeData({
+                          requestBody: e.target.value,
+                          body: safeParseJson(e.target.value),
+                        })
+                      }
+                      className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 font-mono"
                     />
-                    <p className="text-[11px] text-gray-400 leading-tight">
-                      Static URL or use &#123;&#123;variables&#125;&#125; for simple
-                      values or &#123;&#123;json variable&#125;&#125; to stringify
-                      objects
-                    </p>
                   </div>
                 )}
               </div>
-            ) : isBrowserNode ? (
-              /* Browser Trigger: Just Browser URL, no API */
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-semibold text-gray-700">
-                  Browser URL
-                </label>
-                <input
-                  type="url"
-                  value={selectedNodeData.browserUrl ?? ""}
-                  onChange={(e) =>
-                    updateSelectedNodeData({ browserUrl: e.target.value })
-                  }
-                  placeholder="https://example.com"
-                  className="px-3 py-2 bg-white border border-gray-200 rounded-xl text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-mono"
-                />
+            )}
+
+            {/* Slack Notification */}
+            {selectedNode.type === NodeType.SLACK_EXECUTER && (
+              <div className="flex flex-col gap-2.5">
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-semibold text-gray-700">Channel / Webhook</label>
+                  <input
+                    type="text"
+                    value={selectedNodeData.channel || ""}
+                    onChange={(e) => updateSelectedNodeData({ channel: e.target.value })}
+                    placeholder="#general or webhook URL"
+                    className="px-3 py-2 bg-white border border-gray-200 rounded-xl text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-semibold text-gray-700">Message</label>
+                  <textarea
+                    rows={3}
+                    value={selectedNodeData.message || ""}
+                    onChange={(e) => updateSelectedNodeData({ message: e.target.value })}
+                    placeholder="Enter message to post to Slack..."
+                    className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                  />
+                </div>
               </div>
-            ) : isOutputNode ? (
-              /* Output Node: Output result box, NO API */
+            )}
+
+            {/* Google Form */}
+            {selectedNode.type === NodeType.GOOGLE_FORM_EXECUTER && (
+              <div className="flex flex-col gap-2.5">
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-semibold text-gray-700">Google Form URL</label>
+                  <input
+                    type="url"
+                    value={selectedNodeData.formUrl || ""}
+                    onChange={(e) => updateSelectedNodeData({ formUrl: e.target.value })}
+                    placeholder="https://docs.google.com/forms/d/e/.../viewform"
+                    className="px-3 py-2 bg-white border border-gray-200 rounded-xl text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 font-mono"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Output Node */}
+            {selectedNode.type === NodeType.OUTPUT && (
               <div className="flex flex-col gap-1.5">
                 <label className="text-xs font-semibold text-gray-700 flex items-center justify-between">
                   <span>Output Result</span>
                   <span className="text-[10px] text-emerald-600 font-semibold uppercase">
-                    Live Output
+                    Live Telemetry
                   </span>
                 </label>
                 <textarea
@@ -625,7 +1061,7 @@ function InnerEditorCanvas({
                       : JSON.stringify(
                           selectedNodeData.outputData || {
                             status: 200,
-                            result: "ok",
+                            result: "ready",
                           },
                           null,
                           2,
@@ -642,94 +1078,22 @@ function InnerEditorCanvas({
                   className="px-3 py-2 bg-gray-900 text-emerald-400 font-mono text-xs border border-gray-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                 />
               </div>
-            ) : isTextNode ? (
-              /* Text Node: Text Content editor, NO API */
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-semibold text-gray-700">
-                  Text Content
-                </label>
-                <textarea
-                  rows={4}
-                  value={selectedNodeData.textValue ?? ""}
-                  onChange={(e) => {
-                    updateSelectedNodeData({ textValue: e.target.value });
-                  }}
-                  placeholder="Enter text content..."
-                  className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-sans"
-                />
-              </div>
-            ) : isGoogleFormNode ? (
-              /* Google Form Node: Form URL, NO API */
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-semibold text-gray-700">
-                  Google Form URL
-                </label>
-                <input
-                  type="url"
-                  value={selectedNodeData.formUrl ?? ""}
-                  onChange={(e) =>
-                    updateSelectedNodeData({ formUrl: e.target.value })
-                  }
-                  placeholder="https://docs.google.com/forms/d/e/.../viewform"
-                  className="px-3 py-2 bg-white border border-gray-200 rounded-xl text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-mono"
-                />
-                <p className="text-[11px] text-gray-400">
-                  URL to submit responses or link to Google Form
-                </p>
-              </div>
-            ) : selectedNode.type === NodeType.EMAIL ||
-              selectedNodeData.iconName === "email" ||
-              selectedNodeData.title?.toLowerCase().includes("email") ? (
-              /* Send Email Node: Uneditable Email field instead of API endpoint */
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-semibold text-gray-700 flex items-center justify-between">
-                  <span>Email</span>
-                  <span className="text-[10px] text-gray-400 font-normal">
-                    Uneditable
-                  </span>
-                </label>
-                <input
-                  type="email"
-                  disabled
-                  value={selectedNodeData.emailAddress || "notifications@kairo.dev"}
-                  className="px-3 py-2 bg-gray-100/90 border border-gray-200 rounded-xl text-xs text-gray-500 font-mono cursor-not-allowed select-none"
-                />
-              </div>
-            ) : (
-              /* Standard Action / AI / Integration Node: Disabled API Input */
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-semibold text-gray-700 flex items-center justify-between">
-                  <span>API Endpoint</span>
-                  <span className="text-[10px] text-gray-400 font-normal">
-                    Disabled
-                  </span>
-                </label>
-                <input
-                  type="text"
-                  disabled
-                  value={`https://api.kairo.dev/v1/endpoints/${(selectedNodeData.iconName || "node").toLowerCase()}`}
-                  className="px-3 py-2 bg-gray-100/90 border border-gray-200 rounded-xl text-xs text-gray-400 font-mono cursor-not-allowed select-none"
-                />
-              </div>
             )}
 
-            {/* Action buttons: Save button only in input / HTTP trigger nodes */}
-            <div className="pt-2 flex flex-col gap-2">
-              {(isHttpNode || isBrowserNode) && (
-                <button
-                  type="button"
-                  disabled={!isDirty}
-                  onClick={handleSaveDialog}
-                  className={`w-full flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-semibold transition-all ${
-                    isDirty
-                      ? "text-white bg-blue-600 hover:bg-blue-700 shadow-xs cursor-pointer"
-                      : "text-gray-400 bg-gray-100 border border-gray-200 cursor-not-allowed"
-                  }`}
-                >
-                  <FloppyDiskBackIcon weight="fill" className="w-3.5 h-3.5" />
-                  <span>{isSaved ? "Saved!" : "Save Changes"}</span>
-                </button>
-              )}
+            {/* Actions: Save Dialog & Delete Node */}
+            <div className="pt-2 flex flex-col gap-2 border-t border-gray-100 mt-2">
+              <button
+                type="button"
+                onClick={handleSaveDialog}
+                className={`w-full flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-semibold transition-all ${
+                  isDirty
+                    ? "text-white bg-blue-600 hover:bg-blue-700 shadow-xs cursor-pointer"
+                    : "text-gray-400 bg-gray-100 border border-gray-200 cursor-default"
+                }`}
+              >
+                <FloppyDiskBackIcon weight="fill" className="w-3.5 h-3.5" />
+                <span>{isSaved ? "Saved!" : "Save Node Settings"}</span>
+              </button>
 
               <button
                 type="button"
@@ -745,6 +1109,15 @@ function InnerEditorCanvas({
       )}
     </div>
   );
+}
+
+function safeParseJson(val: any) {
+  if (typeof val !== "string") return val;
+  try {
+    return JSON.parse(val);
+  } catch {
+    return {};
+  }
 }
 
 export default function EditorCanvas(props: EditorCanvasProps) {

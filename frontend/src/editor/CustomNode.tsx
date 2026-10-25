@@ -7,18 +7,13 @@ import {
   Clock,
   Database,
   Sparkle,
-  EnvelopeSimple,
+  Brain,
   ChatCircleDots,
+  EnvelopeSimple,
   Globe,
-  GitBranch,
-  CheckCircle,
-  XCircle,
   Trash,
-  Play,
   WebhooksLogoIcon,
   GearIcon,
-  BrowserIcon,
-  BrowsersIcon,
   SquareIcon,
   FileIcon,
   TextT,
@@ -33,16 +28,37 @@ export interface WorkflowNodeData {
   category: "trigger" | "action" | "ai" | "logic";
   iconName: string;
   type?: NodeType | string;
+
+  // Backend Node Data fields
+  prompt?: string;
+  urlForm?: string;
+  url?: string;
+  method?: string;
+  headers?: Record<string, string> | string;
+  body?: Record<string, any> | string;
+  credentialId?: string;
+  model?: string;
+  temperature?: number;
+  from?: string;
+  to?: string;
+  subject?: string;
+  query?: string;
+  formUrl?: string;
+  formId?: string;
+  fields?: Array<{ questionId: string; title: string; type: string; options?: string[] }>;
+  values?: Record<string, unknown>;
+  channel?: string;
+  message?: string;
+
+  // Legacy / UI compat fields
   browserUrl?: string;
   httpMethod?: string;
   endpointUrl?: string;
   requestBody?: string;
-  formUrl?: string;
   outputData?: any;
   textValue?: string;
-  apiEndpoint?: string;
   emailAddress?: string;
-  config?: Record<string, any>;
+
   status?: "idle" | "running" | "success" | "error";
   onDelete?: (id: string) => void;
   onExecute?: (id: string) => void;
@@ -53,46 +69,69 @@ export interface WorkflowNodeData {
 
 const ICON_MAP: Record<string, any> = {
   webhook: WebhooksLogoIcon,
-  cron: Clock,
+  webhook_trigger: WebhooksLogoIcon,
   database: Database,
   postgres: Database,
+  postgres_executer: Database,
   ai: Sparkle,
+  claude: Sparkle,
+  claude_executer: Sparkle,
   openai: Sparkle,
-  gemini: Sparkle,
+  openai_executer: Sparkle,
+  gemini: Brain,
+  gemini_executer: Brain,
   email: EnvelopeSimple,
+  email_executer: EnvelopeSimple,
   slack: ChatCircleDots,
-  http: BrowsersIcon,
-  http_trigger: BrowsersIcon,
-  manual_trigger: Play,
-  branch: GitBranch,
+  slack_executer: ChatCircleDots,
+  http: Globe,
+  http_trigger: Globe,
   browser: Globe,
-  diamond: SquareIcon,
+  browser_trigger: Globe,
   output: SquareIcon,
-  text: TextT,
+  input: TextT,
+  input_trigger: TextT,
   google_form: FileIcon,
-  form: FileIcon,
+  google_form_executer: FileIcon,
 };
 
 function CustomNode({ id, data, selected }: any) {
   const nodeData = data as WorkflowNodeData;
   const iconKey = (nodeData.iconName || "").toLowerCase();
-  const IconComponent = ICON_MAP[iconKey] || Lightning;
+  const IconComponent = ICON_MAP[iconKey] || ICON_MAP[String(nodeData.type || "").toLowerCase()] || Lightning;
   const status = nodeData.status || "idle";
 
   const isHttpRequest =
     iconKey === "http" ||
-    nodeData.type === NodeType.HTTP_REQUEST ||
-    (nodeData.type === NodeType.HTTP_TRIGGER && iconKey !== "browser");
+    nodeData.type === NodeType.HTTP_TRIGGER;
+
+  const isOutput =
+    iconKey === "output" ||
+    iconKey === "diamond" ||
+    nodeData.type === NodeType.OUTPUT;
+
+  const isInput =
+    iconKey === "input" ||
+    nodeData.type === NodeType.INPUT_TRIGGER;
+
+  const isBrowser =
+    iconKey === "browser" ||
+    nodeData.type === NodeType.BROWSER_TRIGGER;
+
+  const isAI =
+    nodeData.type === NodeType.CLAUDE_EXECUTER ||
+    nodeData.type === NodeType.OPENAI_EXECUTER ||
+    nodeData.type === NodeType.GEMINI_EXECUTER;
 
   return (
     <div
-      className={`relative group w-[170px] rounded-xl bg-white border transition-all duration-200 select-none shadow-xs ${
+      className={`relative group w-[185px] rounded-xl bg-white border transition-all duration-200 select-none shadow-xs ${
         selected
           ? "border-blue-600 ring-2 ring-blue-500/20"
           : status === "running"
             ? "border-2 border-blue-600 ring-2 ring-blue-500/30 animate-pulse"
             : status === "success"
-              ? "border-emerald-500/80"
+              ? "border-emerald-500/80 ring-1 ring-emerald-500/20"
               : status === "error"
                 ? "border-2 border-dashed border-red-500 ring-2 ring-red-500/20 animate-pulse"
                 : "border-gray-200 hover:border-gray-300"
@@ -106,8 +145,8 @@ function CustomNode({ id, data, selected }: any) {
       />
 
       {/* Node Card Content */}
-      <div className="p-2 flex flex-col gap-1.5">
-        {/* Top row: icon | setting | delete | play */}
+      <div className="p-2.5 flex flex-col gap-1.5">
+        {/* Top row: icon | setting | delete */}
         <div className="flex items-center justify-between gap-1 pb-1.5 border-b border-gray-100">
           <div className="w-5 h-5 rounded-md bg-blue-50/70 text-blue-700 border border-blue-200/60 flex items-center justify-center flex-shrink-0">
             <IconComponent weight="duotone" className="w-3 h-3" />
@@ -122,10 +161,10 @@ function CustomNode({ id, data, selected }: any) {
                 nodeData.onOpenSettings?.(id);
               }}
               className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors cursor-pointer"
-              title="Settings"
-              aria-label="Settings"
+              title="Configure Node"
+              aria-label="Configure Node"
             >
-              <GearIcon className="w-3 h-3" />
+              <GearIcon className="w-3.5 h-3.5" />
             </button>
 
             {/* Delete button */}
@@ -139,51 +178,23 @@ function CustomNode({ id, data, selected }: any) {
               title="Delete node"
               aria-label="Delete node"
             >
-              <Trash className="w-3 h-3" />
+              <Trash className="w-3.5 h-3.5" />
             </button>
-
-            {/* Play button or Status indicator */}
-            {/* {status === "running" ? (
-              <div className="w-3 h-3 rounded-full border-2 border-blue-600 border-t-transparent animate-spin ml-0.5" />
-            ) : status === "success" ? (
-              <CheckCircle
-                weight="fill"
-                className="w-3.5 h-3.5 text-emerald-500"
-              />
-            ) : status === "error" ? (
-              <XCircle weight="fill" className="w-3.5 h-3.5 text-red-500" />
-            ) : (
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  nodeData.onExecute?.(id);
-                }}
-                className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors cursor-pointer"
-                title="Run step"
-                aria-label="Run step"
-              >
-                <Play
-                  weight="fill"
-                  className="w-3 h-3 text-gray-500 hover:text-blue-600"
-                />
-              </button>
-            )} */}
           </div>
         </div>
 
-        {/* Title */}
+        {/* Title & Preview info */}
         <div className="min-w-0">
           <h4 className="text-[11px] font-bold text-gray-900 leading-tight truncate">
             {nodeData.title}
           </h4>
 
-          {/* HTTP Request: Only a dropdown of methods on the node */}
+          {/* HTTP Trigger / Request: Method dropdown */}
           {isHttpRequest && (
             <div className="mt-1">
               <div className="relative">
                 <select
-                  value={nodeData.httpMethod || "GET"}
+                  value={nodeData.method || nodeData.httpMethod || "GET"}
                   onChange={(e) => {
                     nodeData.onChangeMethod?.(id, e.target.value);
                   }}
@@ -198,21 +209,69 @@ function CustomNode({ id, data, selected }: any) {
                 </select>
                 <CaretDown className="pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2 w-2.5 h-2.5 text-gray-400" />
               </div>
+              <div className="text-[9px] text-gray-500 font-mono truncate mt-0.5">
+                {nodeData.url || nodeData.endpointUrl || "https://..."}
+              </div>
             </div>
           )}
 
           {/* Browser Trigger: Browser URL badge */}
-          {iconKey === "browser" && (
+          {isBrowser && (
             <div className="mt-1 flex items-center gap-1 text-[9px] bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded border border-blue-200/50 truncate">
               <span className="truncate text-gray-600 font-mono">
-                {nodeData.browserUrl || "https://..."}
+                {nodeData.urlForm || nodeData.browserUrl || "https://..."}
               </span>
             </div>
           )}
 
+          {/* Input Trigger: Prompt input/textarea */}
+          {isInput && (
+            <div className="mt-1">
+              <textarea
+                value={nodeData.prompt || nodeData.textValue || ""}
+                onChange={(e) => {
+                  nodeData.onChangeText?.(id, e.target.value);
+                }}
+                placeholder="Enter prompt..."
+                rows={2}
+                className="nodrag nowheel w-full bg-gray-50 hover:bg-white focus:bg-white text-gray-800 font-sans text-[10px] p-1.5 rounded-lg border border-gray-200 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500/20 transition-all resize-none leading-tight"
+              />
+            </div>
+          )}
 
-          {/* Output Node: Vertically bigger box */}
-          {(iconKey === "diamond" || iconKey === "output" || nodeData.type === NodeType.OUTPUT) && (
+          {/* AI Executors (Claude / OpenAI / Gemini): Model & Prompt preview */}
+          {isAI && (
+            <div className="mt-1 flex flex-col gap-0.5">
+              <div className="flex items-center justify-between text-[9px]">
+                <span className="font-semibold text-blue-700 bg-blue-50 px-1 rounded truncate max-w-[100px]">
+                  {nodeData.model || "Default Model"}
+                </span>
+                <span className="text-gray-400">
+                  {nodeData.credentialId ? "✓ Key set" : "! Missing key"}
+                </span>
+              </div>
+              <p className="text-[9px] text-gray-500 truncate italic">
+                {nodeData.prompt ? `"${nodeData.prompt}"` : "Click settings to configure"}
+              </p>
+            </div>
+          )}
+
+          {/* PostgreSQL: Query preview */}
+          {nodeData.type === NodeType.POSTGRES_EXECUTER && (
+            <div className="mt-1 text-[9px] font-mono text-gray-600 bg-gray-50 p-1 rounded border border-gray-200 truncate">
+              {nodeData.query || "SELECT * FROM ..."}
+            </div>
+          )}
+
+          {/* Email: Recipient */}
+          {nodeData.type === NodeType.EMAIL_EXECUTER && (
+            <div className="mt-1 text-[9px] text-gray-600 truncate">
+              To: <span className="font-semibold text-gray-800">{nodeData.to || "recipient@..."}</span>
+            </div>
+          )}
+
+          {/* Output Node: Result box */}
+          {isOutput && (
             <div className="mt-1">
               <div
                 title={
@@ -220,31 +279,16 @@ function CustomNode({ id, data, selected }: any) {
                     ? typeof nodeData.outputData === "string"
                       ? nodeData.outputData
                       : JSON.stringify(nodeData.outputData)
-                    : '{"status": 200, "result": "ok"}'
+                    : '{"status": "ready"}'
                 }
-                className="bg-gray-900 text-emerald-400 font-mono text-[9px] p-2 rounded-lg border border-gray-800 shadow-inner h-24 overflow-y-auto no-scrollbar whitespace-pre-wrap break-all leading-relaxed"
+                className="bg-gray-900 text-emerald-400 font-mono text-[9px] p-1.5 rounded-lg border border-gray-800 shadow-inner h-20 overflow-y-auto no-scrollbar whitespace-pre-wrap break-all leading-relaxed"
               >
                 {nodeData.outputData
                   ? typeof nodeData.outputData === "string"
                     ? nodeData.outputData
                     : JSON.stringify(nodeData.outputData, null, 2)
-                  : '{\n  "status": 200,\n  "result": "ok"\n}'}
+                  : '{\n  "status": "ready"\n}'}
               </div>
-            </div>
-          )}
-
-          {/* Text Node: Directly editable on the node */}
-          {(iconKey === "text" || nodeData.type === NodeType.TEXT) && (
-            <div className="mt-1">
-              <textarea
-                value={nodeData.textValue ?? ""}
-                onChange={(e) => {
-                  nodeData.onChangeText?.(id, e.target.value);
-                }}
-                placeholder="Type text here..."
-                rows={3}
-                className="nodrag nowheel w-full bg-gray-50 hover:bg-white focus:bg-white text-gray-800 font-sans text-[10px] p-1.5 rounded-lg border border-gray-200 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500/20 transition-all resize-none leading-tight"
-              />
             </div>
           )}
         </div>
@@ -261,3 +305,4 @@ function CustomNode({ id, data, selected }: any) {
 }
 
 export default memo(CustomNode);
+
