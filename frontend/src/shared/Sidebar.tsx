@@ -3,7 +3,15 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { House, Path, Key, CreditCard, Gear, SignOut, Bell } from "@phosphor-icons/react";
+import {
+  House,
+  Path,
+  Key,
+  CreditCard,
+  Gear,
+  SignOut,
+  Bell,
+} from "@phosphor-icons/react";
 import { useState, useEffect } from "react";
 import LogoutModal from "./LogoutModal";
 import { useAuthStore } from "@/zusstore/auth.store";
@@ -38,8 +46,17 @@ export default function Sidebar() {
         {/* Top Section */}
         <div className="flex flex-col gap-8 pt-6">
           {/* Logo */}
-          <Link href="/" className="flex items-center justify-center gap-2 px-6">
-            <Image src="/Kairo.png" alt="Logo" width={100} height={32} className="h-8 w-auto brightness-0" />
+          <Link
+            href="/"
+            className="flex items-center justify-center gap-2 px-6"
+          >
+            <Image
+              src="/Kairo.png"
+              alt="Logo"
+              width={180}
+              height={40}
+              className="brightness-0"
+            />
           </Link>
 
           {/* Navigation */}
@@ -67,7 +84,10 @@ export default function Sidebar() {
                         : "text-gray-600 hover:bg-gray-200/50 hover:text-blue-600 rounded-lg mr-4"
                     }`}
                   >
-                    <Icon weight={isActive ? "fill" : "regular"} className="w-5 h-5" />
+                    <Icon
+                      weight={isActive ? "fill" : "regular"}
+                      className="w-5 h-5"
+                    />
                     {item.name}
                   </Link>
                 </div>
@@ -129,7 +149,10 @@ export default function Sidebar() {
             className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium text-red-600 hover:bg-red-50/80 transition-colors w-full cursor-pointer group mt-1"
           >
             <div className="w-6 h-6 flex items-center justify-center flex-shrink-0">
-              <SignOut weight="bold" className="w-5 h-5 transition-transform group-hover:-translate-x-0.5" />
+              <SignOut
+                weight="bold"
+                className="w-5 h-5 transition-transform group-hover:-translate-x-0.5"
+              />
             </div>
             <span>Logout</span>
           </button>
