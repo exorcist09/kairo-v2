@@ -1,5 +1,11 @@
 import Editor from "@/editor/Editor";
 
-export default function EditorPage({ params }: { params: { id: string } }) {
-  return <Editor workflowId={params.id} />;
+export default async function EditorPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  return <Editor workflowId={id} />;
 }
+

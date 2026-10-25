@@ -7,6 +7,7 @@ import cookieParser from "cookie-parser";
 import workflowRouter from "./workflows/workflow.route";
 import credentialsRouter from "./credentials/credentials.route";
 import billingRouter from "./billing/billing.route";
+import analyticsRouter from "./analytics/analytics.route";
 
 const app = express();
 
@@ -30,7 +31,6 @@ app.use("/api/auth", authRouter);
 // OK
 app.use("/api", profileRouter);
 
-
 // OK
 app.use("/api/workflows", workflowRouter);
 
@@ -39,5 +39,8 @@ app.use("/api/credentials", credentialsRouter);
 
 // OK
 app.use("/api/billing", billingRouter);
+
+// OK
+app.use("/api/analytics", analyticsRouter);
 
 export default app;

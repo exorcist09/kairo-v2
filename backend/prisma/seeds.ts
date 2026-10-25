@@ -6,7 +6,7 @@ async function main() {
   const plans = [
     {
       type: "FREE_TIER" as const,
-      credits: 50,
+      credits: 100,
       price: 0,
       pricePerCredit: null,
       minCredits: null,
@@ -15,7 +15,7 @@ async function main() {
 
     {
       type: "SMALL" as const,
-      credits: 100,
+      credits: 250,
       price: 99,
       pricePerCredit: null,
       minCredits: null,
@@ -24,7 +24,7 @@ async function main() {
 
     {
       type: "MEDIUM" as const,
-      credits: 500,
+      credits: 800,
       price: 299,
       pricePerCredit: null,
       minCredits: null,
@@ -34,7 +34,7 @@ async function main() {
     {
       type: "LARGE" as const,
       label: "Large",
-      credits: 1200,
+      credits: 1500,
       price: 499,
       pricePerCredit: null,
       minCredits: null,

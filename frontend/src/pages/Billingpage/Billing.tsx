@@ -89,7 +89,7 @@ export default function Billing() {
     useAnimatedCounter(balance, 1200);
 
   useEffect(() => {
-    fetchBillingData();
+    fetchBillingData(true);
   }, [fetchBillingData]);
 
   // Dynamic Free Tier from DB plans
@@ -643,19 +643,37 @@ export default function Billing() {
                   ) : (
                     <div className="z-10 relative flex-1 flex flex-col justify-end pt-4">
                       <div className="flex flex-col gap-2 overflow-y-auto no-scrollbar max-h-[180px]">
-                        {usageEntries.map((u: any, i: number) => (
-                          <div
-                            key={u.id || i}
-                            className="flex items-center justify-between p-3 rounded-xl bg-gray-50/70 border border-gray-200/60"
-                          >
-                            <span className="text-xs font-semibold text-gray-800">
-                              Workflow Execution
-                            </span>
-                            <span className="text-xs font-bold text-red-600">
-                              -{Math.abs(u.amount).toLocaleString()} credits
-                            </span>
-                          </div>
-                        ))}
+                        {usageEntries.map((u: any, i: number) => {
+                          const formattedDate = u.createdAt
+                            ? new Date(u.createdAt).toLocaleDateString(undefined, {
+                                month: "short",
+                                day: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })
+                            : null;
+
+                          return (
+                            <div
+                              key={u.id || i}
+                              className="flex items-center justify-between p-3 rounded-xl bg-gray-50/70 border border-gray-200/60"
+                            >
+                              <div className="flex flex-col min-w-0 pr-2">
+                                <span className="text-xs font-semibold text-gray-800 truncate">
+                                  {u.description || "Workflow Execution"}
+                                </span>
+                                {formattedDate && (
+                                  <span className="text-[10px] text-gray-400 mt-0.5">
+                                    {formattedDate}
+                                  </span>
+                                )}
+                              </div>
+                              <span className="text-xs font-bold text-red-600 shrink-0">
+                                -{Math.abs(u.amount).toLocaleString()} credits
+                              </span>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   )}
@@ -693,18 +711,26 @@ export default function Billing() {
                             })
                           : "Recent";
 
+                        const titleText =
+                          tx.description ||
+                          (tx.type === "USAGE"
+                            ? "Workflow Execution"
+                            : tx.type === "PURCHASE"
+                            ? "Credit Purchase"
+                            : tx.type);
+
                         return (
                           <div
                             key={tx.id || idx}
                             className="flex items-center justify-between p-3 rounded-xl bg-white border border-gray-200/80 hover:border-gray-300 hover:shadow-2xs transition-all"
                           >
-                            <div className="flex flex-col">
-                              <span className="text-xs font-bold text-gray-900">
-                                {tx.type}
+                            <div className="flex flex-col min-w-0 pr-2">
+                              <span className="text-xs font-bold text-gray-900 truncate">
+                                {titleText}
                               </span>
                               <span className="text-[11px] font-medium text-gray-400">{formattedDate}</span>
                             </div>
-                            <div className="flex flex-col items-end">
+                            <div className="flex flex-col items-end shrink-0">
                               <span
                                 className={`text-xs font-bold ${
                                   isPositive ? "text-emerald-600" : "text-gray-900"

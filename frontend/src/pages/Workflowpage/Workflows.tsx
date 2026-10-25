@@ -22,9 +22,10 @@ import CreateWorkflowModal from "./components/CreateWorkflowModal";
 
 const TABS = [
   { key: "all", label: "All" },
-  { key: "draft", label: "Drafts" },
-  { key: "ongoing", label: "Ongoing" },
+  { key: "draft", label: "Draft" },
   { key: "completed", label: "Completed" },
+  { key: "ongoing", label: "Ongoing" },
+  { key: "failed", label: "Failed" },
 ] as const;
 
 type TabKey = (typeof TABS)[number]["key"];
@@ -56,7 +57,8 @@ export default function Workflows() {
   });
 
   useEffect(() => {
-    fetchWorkflows();
+    // Always fetch fresh status from backend on mount
+    fetchWorkflows(true);
   }, [fetchWorkflows]);
 
   useEffect(() => {
@@ -129,6 +131,36 @@ export default function Workflows() {
           <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 flex-shrink-0">
             <Pen weight="duotone" className="w-5 h-5" />
           </div>
+        );
+    }
+  };
+
+  const getStatusBadge = (status: WorkflowItem["status"]) => {
+    switch (status) {
+      case "completed":
+        return (
+          <span className="px-2 py-0.5 text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full">
+            Completed
+          </span>
+        );
+      case "ongoing":
+        return (
+          <span className="px-2 py-0.5 text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-200 rounded-full animate-pulse">
+            Ongoing
+          </span>
+        );
+      case "failed":
+        return (
+          <span className="px-2 py-0.5 text-[10px] font-semibold bg-red-50 text-red-700 border border-red-200 rounded-full">
+            Failed
+          </span>
+        );
+      case "draft":
+      default:
+        return (
+          <span className="px-2 py-0.5 text-[10px] font-semibold bg-gray-100 text-gray-600 border border-gray-200 rounded-full">
+            Draft
+          </span>
         );
     }
   };
@@ -296,20 +328,17 @@ export default function Workflows() {
                       {getWorkflowIcon(w.status)}
 
                       <div className="flex flex-col min-w-0">
-                        {isCompleted ? (
-                          <span className="font-semibold text-gray-900 truncate cursor-default">
-                            {w.name}
-                          </span>
-                        ) : (
+                        <div className="flex items-center gap-2">
                           <Link
                             href={`/editor/${w.id}`}
                             className="font-semibold text-gray-900 hover:text-blue-600 transition-colors truncate"
                           >
                             {w.name}
                           </Link>
-                        )}
+                          {getStatusBadge(w.status)}
+                        </div>
 
-                        <span className="text-xs text-gray-500">
+                        <span className="text-xs text-gray-500 mt-0.5">
                           {isOngoing
                             ? `Running since: ${w.updatedAt}`
                             : isCompleted
@@ -321,17 +350,15 @@ export default function Workflows() {
 
                     {/* Actions */}
                     <div className="flex items-center gap-2 flex-shrink-0">
-                      {!isCompleted && (
-                        <Link
-                          href={`/editor/${w.id}`}
-                          className="flex items-center gap-1.5 text-xs font-semibold text-blue-600 bg-blue-50/50 hover:bg-blue-100 border border-blue-100 px-3.5 py-2 rounded-lg transition-colors cursor-pointer"
-                        >
-                          <span>Open Editor</span>
-                          <ArrowUpRight weight="bold" className="w-3.5 h-3.5" />
-                        </Link>
-                      )}
+                      <Link
+                        href={`/editor/${w.id}`}
+                        className="flex items-center gap-1.5 text-xs font-semibold text-blue-600 bg-blue-50/50 hover:bg-blue-100 border border-blue-100 px-3.5 py-2 rounded-lg transition-colors cursor-pointer"
+                      >
+                        <span>Open Editor</span>
+                        <ArrowUpRight weight="bold" className="w-3.5 h-3.5" />
+                      </Link>
 
-                      {!isOngoing && (
+                      {!isOngoing && !isCompleted && (
                         <button
                           type="button"
                           onClick={(e) => {

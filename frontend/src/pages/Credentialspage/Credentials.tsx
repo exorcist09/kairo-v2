@@ -11,6 +11,11 @@ import {
 
 const PROVIDER_OPTIONS = [
   {
+    value: "Anthropic Claude",
+    label: "Anthropic Claude",
+    placeholder: "sk-ant-api03-••••••••••••••••",
+  },
+  {
     value: "OpenAI",
     label: "OpenAI API",
     placeholder: "sk-proj-••••••••••••••••",
@@ -21,11 +26,11 @@ const PROVIDER_OPTIONS = [
     placeholder: "AIzaSy••••••••••••••••",
   },
   { value: "Slack", label: "Slack Bot", placeholder: "xoxb-••••••••••••••••" },
-  { value: "Email", label: "Email", placeholder: "smtp_pass_••••••••••••••••" },
+  { value: "Email", label: "Email (SMTP JSON)", placeholder: '{"host":"smtp.mail.com","port":587,"username":"user","password":"pwd"}' },
   {
     value: "PostgreSQL",
-    label: "PostgreSQL Database",
-    placeholder: "postgresql://user:pass@host:5432/db",
+    label: "PostgreSQL (Connection JSON)",
+    placeholder: '{"host":"localhost","port":5432,"database":"app","username":"postgres","password":"pwd"}',
   },
   {
     value: "Google Form",

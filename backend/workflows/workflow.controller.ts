@@ -2,6 +2,7 @@ import type { Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import * as workflowService from "./workflow.service";
 import { WorkflowStatus } from "../generated/prisma/enums";
+import { connect } from "bun";
 
 export const getUserId = (req: Request) => {
   const token = req.headers.authorization?.split(" ")[1];
@@ -151,31 +152,38 @@ export const deleteWorkflowController = async (req: Request, res: Response) => {
 
 // Save workflow
 export const saveController = async (req: Request, res: Response) => {
-  const userId = getUserId(req);
-  const workflowId = req.params.id;
-  if (!workflowId || Array.isArray(workflowId)) {
+  try {
+    const userId = getUserId(req);
+    const workflowId = req.params.id;
+    if (!workflowId || Array.isArray(workflowId)) {
+      return res.status(400).json({
+        message: "Invalid workflow ID",
+      });
+    }
+
+    const { nodes, connections } = req.body;
+
+    if (!Array.isArray(nodes) || !Array.isArray(connections)) {
+      return res.status(400).json({
+        message: "Nodes and connections are required",
+      });
+    }
+
+    const savedWorkflow = await workflowService.saveWorkflow(
+      workflowId,
+      userId,
+      nodes,
+      connections,
+    );
+
+    return res.status(200).json({
+      message: "Workflow saved successfully",
+      savedWorkflow,
+    });
+  } catch (error) {
     return res.status(400).json({
-      message: "Invalid workflow ID",
+      message:
+        error instanceof Error ? error.message : "Failed to save workflow",
     });
   }
-
-  const { name, type, position, data, fromNodeId, toNodeId, updatedAt } =
-    req.body;
-
-  const savedWorkflow = await workflowService.saveWorkflow(
-    workflowId,
-    userId,
-    name,
-    type,
-    position,
-    data,
-    fromNodeId,
-    toNodeId,
-    updatedAt,
-  );
-
-  return res.status(200).json({
-    message: "Workflow updated successfully",
-    savedWorkflow,
-  });
 };
