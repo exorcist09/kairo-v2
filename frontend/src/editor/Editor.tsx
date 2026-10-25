@@ -7,6 +7,7 @@ import EditorCanvas from "./EditorCanvas";
 import EditorWorker from "./EditorWorker";
 import { getByIdWorkflow, saveWorkflowCanvas, executeWorkflow } from "@/api/workflow.api";
 import { useWorkflowStore } from "@/zusstore/workflow.store";
+import { useAnalyticsStore } from "@/zusstore/analytics.store";
 import { Node, Edge } from "@xyflow/react";
 import { CheckCircle, WarningCircle, X } from "@phosphor-icons/react";
 
@@ -17,6 +18,7 @@ interface EditorProps {
 export default function Editor({ workflowId }: EditorProps) {
   const { updateWorkflowStatus } = useWorkflowStore();
   const [view, setView] = useState<"editor" | "worker">("editor");
+  const [isLoading, setIsLoading] = useState(true);
   const [isExecuting, setIsExecuting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [workflowName, setWorkflowName] = useState<string>("Loading workflow...");
@@ -42,6 +44,7 @@ export default function Editor({ workflowId }: EditorProps) {
   // Fetch workflow details on mount
   useEffect(() => {
     let mounted = true;
+    setIsLoading(true);
     getByIdWorkflow(workflowId)
       .then((res) => {
         if (!mounted) return;
@@ -49,10 +52,10 @@ export default function Editor({ workflowId }: EditorProps) {
         if (wf) {
           setWorkflowName(wf.workflowName || `Workflow #${workflowId}`);
           setWorkflowStatus(wf.workflowStatus || "DRAFT");
-          if (Array.isArray(wf.nodes) && wf.nodes.length > 0) {
+          if (Array.isArray(wf.nodes)) {
             setInitialNodes(wf.nodes);
           }
-          if (Array.isArray(wf.edges) && wf.edges.length > 0) {
+          if (Array.isArray(wf.edges)) {
             setInitialEdges(wf.edges);
           }
         }
@@ -61,6 +64,11 @@ export default function Editor({ workflowId }: EditorProps) {
         if (!mounted) return;
         console.warn("Could not load workflow details:", err);
         setWorkflowName(`Workflow #${workflowId}`);
+      })
+      .finally(() => {
+        if (mounted) {
+          setIsLoading(false);
+        }
       });
 
     return () => {
@@ -104,6 +112,7 @@ export default function Editor({ workflowId }: EditorProps) {
         if (jobId) {
           setLastJobId(jobId);
         }
+        useAnalyticsStore.getState().fetchAnalytics(true);
       } catch (err: any) {
         console.error("Execute workflow error:", err);
         showToast(
@@ -113,6 +122,7 @@ export default function Editor({ workflowId }: EditorProps) {
         setIsExecuting(false);
         setWorkflowStatus("FAILED");
         updateWorkflowStatus(workflowId, "failed");
+        useAnalyticsStore.getState().fetchAnalytics(true);
       }
     })();
   };
@@ -126,6 +136,7 @@ export default function Editor({ workflowId }: EditorProps) {
     setIsExecuting(false);
     setWorkflowStatus("COMPLETED");
     updateWorkflowStatus(workflowId, "completed");
+    useAnalyticsStore.getState().fetchAnalytics(true);
     showToast("Workflow execution completed successfully!", "success");
   };
 
@@ -170,37 +181,55 @@ export default function Editor({ workflowId }: EditorProps) {
       />
 
       {/* Main Content Area */}
-      <div className="flex-1 flex min-h-0 relative overflow-hidden">
-        {view === "editor" ? (
-          <>
-            {/* Left Node Library Sidebar */}
-            <EditorSidebar onAddNode={(item) => addNodeRef.current?.(item)} />
+      {isLoading ? (
+        <div className="flex-1 w-full h-full flex flex-col items-center justify-center bg-gray-50/50">
+          <div className="relative flex items-center justify-center mb-4">
+            <div className="w-12 h-12 rounded-full border-2 border-blue-600/20 border-t-blue-600 animate-spin" />
+            <div className="w-6 h-6 rounded-full bg-blue-50 flex items-center justify-center absolute">
+              <span className="w-2 h-2 rounded-full bg-blue-600 animate-ping" />
+            </div>
+          </div>
+          <h3 className="text-sm font-bold text-gray-900 mb-1">
+            Loading workflow canvas...
+          </h3>
+          <p className="text-xs text-gray-400">
+            Fetching nodes, edges, and execution history
+          </p>
+        </div>
+      ) : (
+        <div className="flex-1 flex min-h-0 relative overflow-hidden">
+          {view === "editor" ? (
+            <>
+              {/* Left Node Library Sidebar */}
+              <EditorSidebar onAddNode={(item) => addNodeRef.current?.(item)} />
 
-            {/* React Flow Canvas */}
-            <div className="flex-1 relative h-full bg-gray-50/50">
-              <EditorCanvas
-                workflowId={workflowId}
-                initialNodes={initialNodes}
-                initialEdges={initialEdges}
+              {/* React Flow Canvas */}
+              <div className="flex-1 relative h-full bg-gray-50/50">
+                <EditorCanvas
+                  workflowId={workflowId}
+                  workflowStatus={workflowStatus}
+                  initialNodes={initialNodes}
+                  initialEdges={initialEdges}
+                  isExecuting={isExecuting}
+                  onExecutionComplete={handleExecutionComplete}
+                  externalAddNodeRef={addNodeRef}
+                  externalSaveRef={saveCanvasRef}
+                />
+              </div>
+            </>
+          ) : (
+            /* Worker Telemetry / Execution Log View */
+            <div className="flex-1 w-full h-full">
+              <EditorWorker
+                workflowName={workflowName}
                 isExecuting={isExecuting}
-                onExecutionComplete={handleExecutionComplete}
-                externalAddNodeRef={addNodeRef}
-                externalSaveRef={saveCanvasRef}
+                onExecute={handleExecute}
+                onStop={handleStop}
               />
             </div>
-          </>
-        ) : (
-          /* Worker Telemetry / Execution Log View */
-          <div className="flex-1 w-full h-full">
-            <EditorWorker
-              workflowName={workflowName}
-              isExecuting={isExecuting}
-              onExecute={handleExecute}
-              onStop={handleStop}
-            />
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

@@ -358,7 +358,7 @@ export default function Workflows() {
                         <ArrowUpRight weight="bold" className="w-3.5 h-3.5" />
                       </Link>
 
-                      {!isOngoing && (
+                      {!isOngoing && !isCompleted && (
                         <button
                           type="button"
                           onClick={(e) => {

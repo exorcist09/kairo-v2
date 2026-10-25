@@ -59,6 +59,7 @@ export interface WorkflowNodeData {
   emailAddress?: string;
 
   status?: "idle" | "running" | "success" | "error";
+  isCompletedWorkflow?: boolean;
   onDelete?: (id: string) => void;
   onExecute?: (id: string) => void;
   onOpenSettings?: (id: string) => void;
@@ -199,6 +200,7 @@ function CustomNode({ id, data, selected }: any) {
       <Handle
         type="target"
         position={Position.Left}
+        id="main"
         className="!w-2 !h-2 !bg-blue-600 !-left-1 hover:!scale-125 transition-transform"
       />
 
@@ -242,19 +244,21 @@ function CustomNode({ id, data, selected }: any) {
               <GearIcon className="w-3.5 h-3.5" />
             </button>
 
-            {/* Delete button */}
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                nodeData.onDelete?.(id);
-              }}
-              className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors cursor-pointer"
-              title="Delete node"
-              aria-label="Delete node"
-            >
-              <Trash className="w-3.5 h-3.5" />
-            </button>
+            {/* Delete button: hidden if workflow is completed */}
+            {!nodeData.isCompletedWorkflow && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  nodeData.onDelete?.(id);
+                }}
+                className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors cursor-pointer"
+                title="Delete node"
+                aria-label="Delete node"
+              >
+                <Trash className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
         </div>
 
@@ -345,12 +349,12 @@ function CustomNode({ id, data, selected }: any) {
             </div>
           )}
 
-          {/* Output Node: Result box displaying clean result */}
+          {/* Output Node: Result box displaying clean result in blue theme */}
           {isOutput && (
             <div className="mt-1">
               <div
                 title={formatCleanOutput(nodeData.outputData)}
-                className="bg-gray-900 text-emerald-400 font-mono text-[9px] p-2 rounded-lg border border-gray-800 shadow-inner h-20 overflow-y-auto no-scrollbar whitespace-pre-wrap break-all leading-relaxed"
+                className="bg-blue-950 text-blue-200 font-mono text-[9px] p-2 rounded-lg border border-blue-800 shadow-inner h-20 overflow-y-auto no-scrollbar whitespace-pre-wrap break-all leading-relaxed"
               >
                 {formatCleanOutput(nodeData.outputData)}
               </div>
@@ -363,6 +367,7 @@ function CustomNode({ id, data, selected }: any) {
       <Handle
         type="source"
         position={Position.Right}
+        id="main"
         className="!w-2 !h-2 !bg-blue-600 !-right-1 hover:!scale-125 transition-transform"
       />
     </div>

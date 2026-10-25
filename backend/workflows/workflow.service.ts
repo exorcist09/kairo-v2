@@ -44,21 +44,29 @@ export const getbyId = async (userId: string, workflowId: string) => {
     throw new Error("Workflow not found");
   }
 
-  // Convert server/database nodes to React Flow format casue thats how reactflow needs it
-  const nodes: FlowNode[] = workflow.nodes.map((node: any) => ({
-    id: node.id,
-    type: node.type,
-    position: node.position as { x: number; y: number },
-    data: (node.data as Record<string, unknown>) || {},
-  }));
+  // Convert server/database nodes to React Flow format cause that's how React Flow needs it
+  const nodes: FlowNode[] = workflow.nodes.map((node: any) => {
+    const rawData = (node.data as Record<string, unknown>) || {};
+    return {
+      id: node.id,
+      type: node.type,
+      position: node.position as { x: number; y: number },
+      data: {
+        ...rawData,
+        title: node.name || rawData.title || node.type,
+        type: node.type,
+        status: workflow.workflowStatus === "COMPLETED" ? "success" : (rawData.status || "idle"),
+      },
+    };
+  });
 
   // Convert server/database connections to React Flow edges
   const edges: FlowEdge[] = workflow.connections.map((connection: any) => ({
     id: connection.id,
     source: connection.fromNodeId,
     target: connection.toNodeId,
-    sourceHandle: connection.fromOutput,
-    targetHandle: connection.toInput,
+    sourceHandle: connection.fromOutput || "main",
+    targetHandle: connection.toInput || "main",
   }));
 
   return {
@@ -78,6 +86,10 @@ export const remove = async (workflowId: string, userId: string) => {
   });
   if (!workflow) {
     throw new Error("Workflow not found");
+  }
+
+  if (workflow.workflowStatus === "COMPLETED") {
+    throw new Error("Completed workflows cannot be deleted");
   }
 
   return await prisma.workflow.delete({

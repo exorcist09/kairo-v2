@@ -21,6 +21,7 @@ model User {
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
   workflows      Workflow[]
+  executions     WorkflowExecution[]
   credentials    Credential[]
   creditBalance  Int              @default(100)
   creditPurchase CreditPurchase[]
@@ -47,6 +48,23 @@ model Workflow {
   updatedAt   DateTime     @updatedAt
   nodes       Node[]
   connections Connection[]
+  executions  WorkflowExecution[]
+}
+
+model WorkflowExecution {
+  id          String         @id @default(uuid())
+  workflowId  String
+  workflow    Workflow       @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status      WorkflowStatus @default(ONGOING)
+  startedAt   DateTime       @default(now())
+  completedAt DateTime?
+  durationMs  Int?
+  error       String?
+
+  @@index([userId, startedAt])
+  @@index([workflowId])
 }
 
 enum NodeType {

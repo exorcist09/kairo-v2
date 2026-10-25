@@ -3,7 +3,8 @@
 import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import { Plus, Coins, MagnifyingGlass, X } from "@phosphor-icons/react";
-import { SidebarNodeItem, TriggerNodes, ExecutionNodes } from "./SidebarNodes";
+import { SidebarNodeItem, TopNodes, TriggerNodes, ExecutionNodes } from "./SidebarNodes";
+import { NodeType } from "@/utils/constants";
 
 export type { SidebarNodeItem, SidebarNodeItem as NodePaletteItem };
 
@@ -39,14 +40,21 @@ export default function EditorSidebar({ onAddNode }: EditorSidebarProps) {
     item.description.toLowerCase().includes(query) ||
     item.type.toLowerCase().includes(query);
 
+  const filteredTopNodes = TopNodes.filter(filterNode);
   const filteredTriggers = TriggerNodes.filter(filterNode);
   const filteredExecutions = ExecutionNodes.filter(filterNode);
-  const hasResults = filteredTriggers.length > 0 || filteredExecutions.length > 0;
+  const hasResults =
+    filteredTopNodes.length > 0 ||
+    filteredTriggers.length > 0 ||
+    filteredExecutions.length > 0;
 
   const renderNodeCard = (item: SidebarNodeItem) => {
     const IconComponent = item.icon;
-    const isTrigger = item.category === "trigger";
-    const iconColor = isTrigger ? "text-blue-600" : "text-purple-600";
+    const isBlue =
+      item.category === "trigger" ||
+      item.type === NodeType.INPUT_TRIGGER ||
+      item.type === NodeType.OUTPUT;
+    const iconColor = isBlue ? "text-blue-600" : "text-purple-600";
 
     return (
       <div
@@ -131,7 +139,7 @@ export default function EditorSidebar({ onAddNode }: EditorSidebarProps) {
                 Node Library
               </span>
               <span className="text-[10px] font-semibold text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded-full">
-                {TriggerNodes.length + ExecutionNodes.length}
+                {TopNodes.length + TriggerNodes.length + ExecutionNodes.length}
               </span>
             </div>
 
@@ -171,12 +179,18 @@ export default function EditorSidebar({ onAddNode }: EditorSidebarProps) {
           </div>
         ) : (
           <>
+            {/* Top Input & Output Nodes: without any section label */}
+            {filteredTopNodes.length > 0 && (
+              <div className="flex flex-col gap-2">
+                {filteredTopNodes.map(renderNodeCard)}
+              </div>
+            )}
+
             {/* Trigger Nodes Section */}
             {filteredTriggers.length > 0 && (
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-2 pt-2 border-t border-gray-100">
                 <div className="flex items-center px-1">
                   <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
-                    {/* <span className="w-1.5 h-1.5 rounded-full bg-blue-500 inline-block" /> */}
                     Trigger Nodes
                   </span>
                 </div>
@@ -189,7 +203,6 @@ export default function EditorSidebar({ onAddNode }: EditorSidebarProps) {
               <div className="flex flex-col gap-2 pt-2 border-t border-gray-100">
                 <div className="flex items-center px-1">
                   <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
-                    {/* <span className="w-1.5 h-1.5 rounded-full bg-purple-500 inline-block" /> */}
                     Execution Nodes
                   </span>
                 </div>

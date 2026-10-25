@@ -25,7 +25,7 @@ export interface SidebarNodeItem {
   cost: number;
 }
 
-export const TriggerNodes: SidebarNodeItem[] = [
+export const TopNodes: SidebarNodeItem[] = [
   {
     type: NodeType.INPUT_TRIGGER,
     title: "Input Trigger",
@@ -36,6 +36,19 @@ export const TriggerNodes: SidebarNodeItem[] = [
     iconName: "input",
     cost: 0,
   },
+  {
+    type: NodeType.OUTPUT,
+    title: "Output",
+    description: "Collect and return workflow final results",
+    subtitle: "Collect and return workflow final results",
+    category: "trigger", // Blue like input
+    icon: SquareIcon,
+    iconName: "output",
+    cost: 0,
+  },
+];
+
+export const TriggerNodes: SidebarNodeItem[] = [
   {
     type: NodeType.BROWSER_TRIGGER,
     title: "Browser Trigger",
@@ -138,16 +151,6 @@ export const ExecutionNodes: SidebarNodeItem[] = [
     icon: FileIcon,
     iconName: "google_form",
     cost: 1,
-  },
-  {
-    type: NodeType.OUTPUT,
-    title: "Output",
-    description: "Collect and return workflow final results",
-    subtitle: "Collect and return workflow final results",
-    category: "action",
-    icon: SquareIcon,
-    iconName: "output",
-    cost: 0,
   },
 ];
 

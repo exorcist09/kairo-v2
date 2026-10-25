@@ -36,6 +36,7 @@ import {
 
 interface EditorCanvasProps {
   workflowId: string;
+  workflowStatus?: string;
   initialNodes?: Node[];
   initialEdges?: Edge[];
   isExecuting: boolean;
@@ -68,6 +69,7 @@ const GEMINI_MODELS = [
 
 function InnerEditorCanvas({
   workflowId,
+  workflowStatus = "DRAFT",
   initialNodes = [],
   initialEdges = [],
   isExecuting,
@@ -78,8 +80,38 @@ function InnerEditorCanvas({
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const { screenToFlowPosition } = useReactFlow();
 
-  const [nodes, setNodes] = useState<Node[]>(initialNodes);
-  const [edges, setEdges] = useState<Edge[]>(initialEdges);
+  const isCompleted = workflowStatus.toUpperCase() === "COMPLETED";
+
+  const mapNodeData = useCallback(
+    (n: Node): Node => {
+      const d = (n.data || {}) as unknown as WorkflowNodeData;
+      return {
+        ...n,
+        data: {
+          ...d,
+          title: d.title || (n as any).name || n.type || "Node",
+          type: d.type || (n.type as NodeType),
+          status: isCompleted ? "success" : (d.status || "idle"),
+          isCompletedWorkflow: isCompleted,
+          prompt: d.prompt ?? d.textValue ?? "",
+          textValue: d.textValue ?? d.prompt ?? "",
+          urlForm: d.urlForm || d.browserUrl || "",
+        },
+      };
+    },
+    [isCompleted],
+  );
+
+  const [nodes, setNodes] = useState<Node[]>(() => initialNodes.map(mapNodeData));
+  const [edges, setEdges] = useState<Edge[]>(() =>
+    initialEdges.map((e) => ({
+      ...e,
+      sourceHandle: e.sourceHandle || "main",
+      targetHandle: e.targetHandle || "main",
+      animated: isExecuting,
+      style: { stroke: isExecuting ? "#2563EB" : "#94A3B8", strokeWidth: 2 },
+    })),
+  );
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [isDirty, setIsDirty] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
@@ -102,22 +134,32 @@ function InnerEditorCanvas({
     };
   }, []);
 
-  // Sync initial nodes/edges if provided and local canvas is empty
+  // Sync initial nodes/edges when loaded
   useEffect(() => {
-    if (initialNodes.length > 0 && nodes.length === 0) {
-      setNodes(initialNodes);
+    if (initialNodes.length > 0) {
+      setNodes((current) => {
+        if (current.length === 0) {
+          return initialNodes.map(mapNodeData);
+        }
+        return current;
+      });
     }
-  }, [initialNodes]);
+  }, [initialNodes, mapNodeData]);
 
   useEffect(() => {
-    if (initialEdges.length > 0 && edges.length === 0) {
-      setEdges(
-        initialEdges.map((e) => ({
-          ...e,
-          animated: isExecuting,
-          style: { stroke: "#2563EB", strokeWidth: 2 },
-        })),
-      );
+    if (initialEdges.length > 0) {
+      setEdges((current) => {
+        if (current.length === 0) {
+          return initialEdges.map((e) => ({
+            ...e,
+            sourceHandle: e.sourceHandle || "main",
+            targetHandle: e.targetHandle || "main",
+            animated: isExecuting,
+            style: { stroke: isExecuting ? "#2563EB" : "#94A3B8", strokeWidth: 2 },
+          }));
+        }
+        return current;
+      });
     }
   }, [initialEdges, isExecuting]);
 
@@ -369,6 +411,9 @@ function InnerEditorCanvas({
             type: (node.type || NodeType.OUTPUT) as NodeType,
             position: node.position,
             data: {
+              title: data.title || node.type || "Node",
+              outputData: data.outputData,
+              status: data.status || "idle",
               prompt: data.prompt ?? data.textValue ?? "",
               urlForm: data.urlForm || data.browserUrl || "",
               url: data.url || data.endpointUrl || "",
@@ -1172,14 +1217,16 @@ function InnerEditorCanvas({
                 <span>{isSaved ? "Saved!" : "Save Node Settings"}</span>
               </button>
 
-              <button
-                type="button"
-                onClick={() => handleDeleteNode(selectedNode.id)}
-                className="w-full flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-semibold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200/60 transition-colors cursor-pointer"
-              >
-                <Trash className="w-3.5 h-3.5" />
-                <span>Delete Node</span>
-              </button>
+              {!isCompleted && (
+                <button
+                  type="button"
+                  onClick={() => handleDeleteNode(selectedNode.id)}
+                  className="w-full flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-semibold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200/60 transition-colors cursor-pointer"
+                >
+                  <Trash className="w-3.5 h-3.5" />
+                  <span>Delete Node</span>
+                </button>
+              )}
             </div>
           </div>
         </div>
