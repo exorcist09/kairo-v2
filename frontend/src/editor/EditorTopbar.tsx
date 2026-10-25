@@ -7,7 +7,9 @@ import {
   ArrowLeft,
   FloppyDiskBackIcon,
   CircleNotch,
+  Coins,
 } from "@phosphor-icons/react";
+import { useBillingStore } from "@/zusstore/billing.store";
 
 interface EditorTopbarProps {
   workflowName?: string;
@@ -32,6 +34,8 @@ export default function EditorTopbar({
   onStop,
   onSave,
 }: EditorTopbarProps) {
+  const { balance: creditBalance } = useBillingStore();
+
   const getStatusBadge = () => {
     switch (workflowStatus.toUpperCase()) {
       case "ONGOING":
@@ -108,6 +112,17 @@ export default function EditorTopbar({
 
       {/* Right: Save & Execute Action Buttons */}
       <div className="flex-1 flex justify-end items-center gap-2">
+        {/* Credit Balance Badge */}
+        <Link
+          href="/billing"
+          className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-gray-50 hover:bg-gray-100 text-gray-700 border border-gray-200/80 transition-colors shadow-2xs mr-1"
+          title="Available credits (Click to manage billing)"
+        >
+          <Coins weight="duotone" className="w-3.5 h-3.5 text-emerald-600" />
+          <span>{creditBalance.toLocaleString()}</span>
+          <span className="text-[10px] text-gray-400 font-normal">credits</span>
+        </Link>
+
         {/* Save Canvas Button */}
         <button
           type="button"

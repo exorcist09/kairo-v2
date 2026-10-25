@@ -94,6 +94,7 @@ export default function Home() {
   const {
     balance: creditBalance,
     plan: userPlan,
+    history: billingHistory,
     loading: billingLoading,
     hasLoaded: billingHasLoaded,
     fetchBillingData,
@@ -121,11 +122,15 @@ export default function Home() {
   } = useAnalyticsStore();
 
   useEffect(() => {
-    fetchBillingData();
+    fetchBillingData(true);
     fetchCredentials();
     fetchWorkflows();
     fetchAnalytics();
   }, [fetchBillingData, fetchCredentials, fetchWorkflows, fetchAnalytics]);
+
+  const totalCreditsConsumed = (billingHistory || [])
+    .filter((tx: any) => tx.type === "USAGE")
+    .reduce((sum: number, tx: any) => sum + Math.abs(tx.amount || 0), 0);
 
   const currentAnalytics =
     analyticsData?.graph?.[timeFilter] || DEFAULT_ANALYTICS_DATA[timeFilter] || DEFAULT_ANALYTICS_DATA["7 Days"];
@@ -424,19 +429,34 @@ export default function Home() {
                         </span>
                         <span className="text-xs text-gray-500 ml-1.5 font-medium">available credits</span>
                       </div>
+                      {totalCreditsConsumed > 0 && (
+                        <span className="text-xs font-semibold text-gray-600 bg-gray-100 border border-gray-200/60 px-2.5 py-0.5 rounded-full">
+                          {totalCreditsConsumed.toLocaleString()} consumed
+                        </span>
+                      )}
                     </div>
 
                     <div className="w-full h-2.5 bg-gray-100 rounded-full overflow-hidden mb-3">
                       <div
                         className="h-full bg-blue-600 rounded-full transition-all duration-500"
                         style={{
-                          width: `${Math.min(100, Math.max(0, (creditBalance / 1000) * 100))}%`,
+                          width: `${Math.min(
+                            100,
+                            Math.max(
+                              0,
+                              (creditBalance /
+                                Math.max(100, creditBalance + totalCreditsConsumed)) *
+                                100
+                            )
+                          )}%`,
                         }}
                       />
                     </div>
 
                     <p className="text-xs text-gray-500">
-                      When your balance reaches zero, workflows pause automatically.
+                      {creditBalance <= 0
+                        ? "Balance exhausted. Workflows will pause until credits are added."
+                        : "When your balance reaches zero, workflows pause automatically."}
                     </p>
                   </div>
 

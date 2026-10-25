@@ -8,6 +8,7 @@ import EditorWorker from "./EditorWorker";
 import { getByIdWorkflow, saveWorkflowCanvas, executeWorkflow } from "@/api/workflow.api";
 import { useWorkflowStore } from "@/zusstore/workflow.store";
 import { useAnalyticsStore } from "@/zusstore/analytics.store";
+import { useBillingStore } from "@/zusstore/billing.store";
 import { Node, Edge } from "@xyflow/react";
 import { CheckCircle, WarningCircle, X } from "@phosphor-icons/react";
 
@@ -113,6 +114,7 @@ export default function Editor({ workflowId }: EditorProps) {
           setLastJobId(jobId);
         }
         useAnalyticsStore.getState().fetchAnalytics(true);
+        useBillingStore.getState().fetchBillingData(true);
       } catch (err: any) {
         console.error("Execute workflow error:", err);
         showToast(
@@ -123,6 +125,7 @@ export default function Editor({ workflowId }: EditorProps) {
         setWorkflowStatus("FAILED");
         updateWorkflowStatus(workflowId, "failed");
         useAnalyticsStore.getState().fetchAnalytics(true);
+        useBillingStore.getState().fetchBillingData(true);
       }
     })();
   };
@@ -137,6 +140,7 @@ export default function Editor({ workflowId }: EditorProps) {
     setWorkflowStatus("COMPLETED");
     updateWorkflowStatus(workflowId, "completed");
     useAnalyticsStore.getState().fetchAnalytics(true);
+    useBillingStore.getState().fetchBillingData(true);
     showToast("Workflow execution completed successfully!", "success");
   };
 

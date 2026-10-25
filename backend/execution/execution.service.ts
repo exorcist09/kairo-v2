@@ -3,20 +3,92 @@ import { executeWorkflow } from "./execution.engine";
 import { workflowQueue } from "../queues/execution.queue";
 import { redis } from "../lib/redis";
 
+export const NODE_CREDIT_COSTS: Record<string, number> = {
+  INPUT_TRIGGER: 0,
+  OUTPUT: 0,
+  BROWSER_TRIGGER: 1,
+  HTTP_TRIGGER: 0,
+  WEBHOOK_TRIGGER: 0,
+  CLAUDE_EXECUTER: 3,
+  OPENAI_EXECUTER: 3,
+  GEMINI_EXECUTER: 2,
+  POSTGRES_EXECUTER: 2,
+  EMAIL_EXECUTER: 1,
+  SLACK_EXECUTER: 1,
+  GOOGLE_FORM_EXECUTER: 1,
+};
+
+export const calculateWorkflowCredits = (
+  nodes: Array<{ type: string; data?: any }>,
+): number => {
+  return nodes.reduce((sum, node) => {
+    if (typeof (node.data as any)?.cost === "number") {
+      return sum + (node.data as any).cost;
+    }
+    return sum + (NODE_CREDIT_COSTS[node.type] ?? 0);
+  }, 0);
+};
+
 export const startWorkflowExecution = async (
   workflowId: string,
   userId: string,
 ) => {
-  // Validate that workflow belongs to authenticated user
+  // Validate that workflow belongs to authenticated user and load its nodes
   const workflow = await prisma.workflow.findFirst({
     where: {
       id: workflowId,
       userId,
     },
+    include: {
+      nodes: true,
+    },
   });
 
   if (!workflow) {
     throw new Error("Workflow not found");
+  }
+
+  // Calculate required credits based on marked credits per node
+  const totalCredits = calculateWorkflowCredits(workflow.nodes);
+
+  // Validate user has sufficient credits
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { creditBalance: true },
+  });
+
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  if (totalCredits > 0 && user.creditBalance < totalCredits) {
+    throw new Error(
+      `Insufficient credits. This workflow requires ${totalCredits} credits, but you have ${user.creditBalance} available. Please add credits in Billing.`
+    );
+  }
+
+  // Deduct credits and log in CreditLedger immediately upon execution start
+  if (totalCredits > 0) {
+    await prisma.$transaction(async (tx) => {
+      const updatedUser = await tx.user.update({
+        where: { id: userId },
+        data: {
+          creditBalance: {
+            decrement: totalCredits,
+          },
+        },
+      });
+
+      await tx.creditLedger.create({
+        data: {
+          userId,
+          type: "USAGE",
+          amount: -totalCredits,
+          balanceAfter: updatedUser.creditBalance,
+          description: `Executed "${workflow.workflowName}" (${totalCredits} credits for ${workflow.nodes.length} nodes)`,
+        },
+      });
+    });
   }
 
   // Mark workflow ONGOING immediately in DB
@@ -32,6 +104,7 @@ export const startWorkflowExecution = async (
       workflowId,
       userId,
       status: "ONGOING",
+      creditsConsumed: totalCredits,
       startedAt,
     },
   });
@@ -127,6 +200,7 @@ export const startWorkflowExecution = async (
     message: "Workflow execution started instantly",
     jobId,
     executionId: execution.id,
+    creditsConsumed: totalCredits,
     workflowId,
     status: "ONGOING",
   };

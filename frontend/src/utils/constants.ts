@@ -13,3 +13,18 @@ export enum NodeType {
   SLACK_EXECUTER = "SLACK_EXECUTER",
 }
 
+export const NODE_CREDIT_COSTS: Record<NodeType | string, number> = {
+  [NodeType.INPUT_TRIGGER]: 0,
+  [NodeType.OUTPUT]: 0,
+  [NodeType.BROWSER_TRIGGER]: 1,
+  [NodeType.HTTP_TRIGGER]: 0,
+  [NodeType.WEBHOOK_TRIGGER]: 0,
+  [NodeType.CLAUDE_EXECUTER]: 3,
+  [NodeType.OPENAI_EXECUTER]: 3,
+  [NodeType.GEMINI_EXECUTER]: 2,
+  [NodeType.POSTGRES_EXECUTER]: 2,
+  [NodeType.EMAIL_EXECUTER]: 1,
+  [NodeType.SLACK_EXECUTER]: 1,
+  [NodeType.GOOGLE_FORM_EXECUTER]: 1,
+};
+

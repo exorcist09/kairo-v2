@@ -17,8 +17,9 @@ import {
   FileIcon,
   TextT,
   CaretDown,
+  Coins,
 } from "@phosphor-icons/react";
-import { NodeType } from "@/utils/constants";
+import { NodeType, NODE_CREDIT_COSTS } from "@/utils/constants";
 
 export interface WorkflowNodeData {
   title: string;
@@ -27,6 +28,8 @@ export interface WorkflowNodeData {
   category: "trigger" | "action" | "ai" | "logic";
   iconName: string;
   type?: NodeType | string;
+  nodeType?: NodeType | string;
+  cost?: number;
 
   // Backend Node Data fields
   prompt?: string;
@@ -176,6 +179,12 @@ function CustomNode({ id, data, selected }: any) {
     nodeData.type === NodeType.OPENAI_EXECUTER ||
     nodeData.type === NodeType.GEMINI_EXECUTER;
 
+  const nodeTypeKey = String(nodeData.nodeType || nodeData.type || "").toUpperCase();
+  const nodeCost =
+    typeof (nodeData as any).cost === "number"
+      ? (nodeData as any).cost
+      : NODE_CREDIT_COSTS[nodeTypeKey] ?? 0;
+
   // Node border colors matching user requirements:
   // - Currently running: GREEN (border-emerald-500)
   // - Done / success: GREY (border-gray-400)
@@ -212,6 +221,13 @@ function CustomNode({ id, data, selected }: any) {
             <div className="w-5 h-5 rounded-md bg-blue-50/70 text-blue-700 border border-blue-200/60 flex items-center justify-center flex-shrink-0">
               <IconComponent weight="duotone" className="w-3 h-3" />
             </div>
+            <span
+              className="inline-flex items-center gap-0.5 px-1 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200/70 text-[9px] font-semibold"
+              title={`${nodeCost} credits`}
+            >
+              <Coins weight="duotone" className="w-2.5 h-2.5 text-emerald-600" />
+              <span>{nodeCost}</span>
+            </span>
             {status === "running" && (
               <span className="text-[9px] font-bold text-emerald-600 bg-emerald-50 px-1 rounded animate-pulse">
                 Running
