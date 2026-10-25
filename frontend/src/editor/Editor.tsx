@@ -84,9 +84,12 @@ export default function Editor({ workflowId }: EditorProps) {
     };
   }, [workflowId]);
 
+  const activeNodes = currentNodes.length > 0 ? currentNodes : initialNodes;
+  const isEmpty = activeNodes.length === 0;
+
   // Save workflow nodes & connections to backend API
   const handleSave = async () => {
-    if (!saveCanvasRef.current) return;
+    if (isEmpty || !saveCanvasRef.current) return;
     try {
       setIsSaving(true);
       const payload = saveCanvasRef.current();
@@ -102,6 +105,7 @@ export default function Editor({ workflowId }: EditorProps) {
 
   // Trigger backend execution instantly
   const handleExecute = () => {
+    if (isEmpty) return;
     // 1. Instant UI response (0ms perceived latency)
     setIsExecuting(true);
     setWorkflowStatus("ONGOING");
@@ -186,6 +190,7 @@ export default function Editor({ workflowId }: EditorProps) {
         onViewChange={setView}
         isExecuting={isExecuting}
         isSaving={isSaving}
+        isEmpty={isEmpty}
         onExecute={handleExecute}
         onStop={handleStop}
         onSave={handleSave}

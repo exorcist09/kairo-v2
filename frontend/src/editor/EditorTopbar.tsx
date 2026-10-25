@@ -7,9 +7,7 @@ import {
   ArrowLeft,
   FloppyDiskBackIcon,
   CircleNotch,
-  Coins,
 } from "@phosphor-icons/react";
-import { useBillingStore } from "@/zusstore/billing.store";
 
 interface EditorTopbarProps {
   workflowName?: string;
@@ -18,6 +16,7 @@ interface EditorTopbarProps {
   onViewChange: (v: "editor" | "worker") => void;
   isExecuting: boolean;
   isSaving?: boolean;
+  isEmpty?: boolean;
   onExecute: () => void;
   onStop: () => void;
   onSave?: () => void;
@@ -30,11 +29,11 @@ export default function EditorTopbar({
   onViewChange,
   isExecuting,
   isSaving = false,
+  isEmpty = false,
   onExecute,
   onStop,
   onSave,
 }: EditorTopbarProps) {
-  const { balance: creditBalance } = useBillingStore();
 
   const getStatusBadge = () => {
     switch (workflowStatus.toUpperCase()) {
@@ -112,24 +111,13 @@ export default function EditorTopbar({
 
       {/* Right: Save & Execute Action Buttons */}
       <div className="flex-1 flex justify-end items-center gap-2">
-        {/* Credit Balance Badge */}
-        <Link
-          href="/billing"
-          className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-gray-50 hover:bg-gray-100 text-gray-700 border border-gray-200/80 transition-colors shadow-2xs mr-1"
-          title="Available credits (Click to manage billing)"
-        >
-          <Coins weight="duotone" className="w-3.5 h-3.5 text-emerald-600" />
-          <span>{creditBalance.toLocaleString()}</span>
-          <span className="text-[10px] text-gray-400 font-normal">credits</span>
-        </Link>
-
         {/* Save Canvas Button */}
         <button
           type="button"
-          disabled={isSaving}
+          disabled={isSaving || isEmpty}
           onClick={onSave}
-          className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all shadow-xs cursor-pointer flex-shrink-0 bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 active:scale-95 disabled:opacity-50"
-          title="Save workflow nodes and connections"
+          className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all shadow-xs cursor-pointer flex-shrink-0 bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white disabled:active:scale-100"
+          title={isEmpty ? "Add nodes to the canvas to save" : "Save workflow nodes and connections"}
         >
           {isSaving ? (
             <>
@@ -147,12 +135,14 @@ export default function EditorTopbar({
         {/* Execute Workflow Button */}
         <button
           type="button"
+          disabled={!isExecuting && isEmpty}
           onClick={isExecuting ? onStop : onExecute}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all shadow-xs cursor-pointer flex-shrink-0 active:scale-95 ${
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all shadow-xs cursor-pointer flex-shrink-0 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-blue-600 disabled:active:scale-100 ${
             isExecuting
               ? "bg-red-600 hover:bg-red-700 text-white"
               : "bg-blue-600 hover:bg-blue-700 text-white"
           }`}
+          title={isEmpty ? "Add nodes to the canvas to execute" : isExecuting ? "Stop workflow execution" : "Execute workflow"}
         >
           {isExecuting ? (
             <>
