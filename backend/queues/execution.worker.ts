@@ -5,6 +5,7 @@ import { executeWorkflow } from "../execution/execution.engine";
 
 // name of queue, hwo to process that queue, connection with redis in order to work with quque
 
+// worker says give me josb from workflow-execution named queue
 const workflowWorker = new Worker(
   "workflow-execution",
 
