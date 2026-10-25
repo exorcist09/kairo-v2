@@ -26,8 +26,15 @@ export default function Editor({ workflowId }: EditorProps) {
   const [workflowStatus, setWorkflowStatus] = useState<string>("DRAFT");
   const [initialNodes, setInitialNodes] = useState<Node[]>([]);
   const [initialEdges, setInitialEdges] = useState<Edge[]>([]);
+  const [currentNodes, setCurrentNodes] = useState<Node[]>([]);
+  const [currentEdges, setCurrentEdges] = useState<Edge[]>([]);
   const [lastJobId, setLastJobId] = useState<string | null>(null);
   const [toast, setToast] = useState<{ type: "success" | "error"; message: string } | null>(null);
+
+  const handleNodesUpdate = useCallback((nodes: Node[], edges: Edge[]) => {
+    setCurrentNodes(nodes);
+    setCurrentEdges(edges);
+  }, []);
 
   // Ref to pass addNode function from Canvas to Sidebar
   const addNodeRef = useRef<((item: NodePaletteItem) => void) | null>(null);
@@ -202,36 +209,38 @@ export default function Editor({ workflowId }: EditorProps) {
         </div>
       ) : (
         <div className="flex-1 flex min-h-0 relative overflow-hidden">
-          {view === "editor" ? (
-            <>
-              {/* Left Node Library Sidebar */}
-              <EditorSidebar onAddNode={(item) => addNodeRef.current?.(item)} />
+          {/* React Flow Canvas & Sidebar */}
+          <div className={`flex-1 flex min-h-0 w-full h-full ${view !== "editor" ? "hidden" : ""}`}>
+            {/* Left Node Library Sidebar */}
+            <EditorSidebar onAddNode={(item) => addNodeRef.current?.(item)} />
 
-              {/* React Flow Canvas */}
-              <div className="flex-1 relative h-full bg-gray-50/50">
-                <EditorCanvas
-                  workflowId={workflowId}
-                  workflowStatus={workflowStatus}
-                  initialNodes={initialNodes}
-                  initialEdges={initialEdges}
-                  isExecuting={isExecuting}
-                  onExecutionComplete={handleExecutionComplete}
-                  externalAddNodeRef={addNodeRef}
-                  externalSaveRef={saveCanvasRef}
-                />
-              </div>
-            </>
-          ) : (
-            /* Worker Telemetry / Execution Log View */
-            <div className="flex-1 w-full h-full">
-              <EditorWorker
-                workflowName={workflowName}
+            {/* React Flow Canvas */}
+            <div className="flex-1 relative h-full bg-gray-50/50">
+              <EditorCanvas
+                workflowId={workflowId}
+                workflowStatus={workflowStatus}
+                initialNodes={initialNodes}
+                initialEdges={initialEdges}
                 isExecuting={isExecuting}
-                onExecute={handleExecute}
-                onStop={handleStop}
+                onExecutionComplete={handleExecutionComplete}
+                externalAddNodeRef={addNodeRef}
+                externalSaveRef={saveCanvasRef}
+                onNodesUpdate={handleNodesUpdate}
               />
             </div>
-          )}
+          </div>
+
+          {/* Worker Telemetry / Background Worker View */}
+          <div className={`flex-1 w-full h-full ${view !== "worker" ? "hidden" : ""}`}>
+            <EditorWorker
+              workflowId={workflowId}
+              workflowName={workflowName}
+              workflowStatus={workflowStatus}
+              isExecuting={isExecuting}
+              nodes={currentNodes.length > 0 ? currentNodes : initialNodes}
+              edges={currentEdges.length > 0 ? currentEdges : initialEdges}
+            />
+          </div>
         </div>
       )}
     </div>

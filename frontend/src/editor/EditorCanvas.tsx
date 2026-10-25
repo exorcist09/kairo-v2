@@ -47,6 +47,7 @@ interface EditorCanvasProps {
   externalSaveRef?: React.MutableRefObject<
     (() => { nodes: any[]; connections: any[] }) | null
   >;
+  onNodesUpdate?: (nodes: Node[], edges: Edge[]) => void;
 }
 
 const CLAUDE_MODELS = [
@@ -76,6 +77,7 @@ function InnerEditorCanvas({
   onExecutionComplete,
   externalAddNodeRef,
   externalSaveRef,
+  onNodesUpdate,
 }: EditorCanvasProps) {
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const { screenToFlowPosition } = useReactFlow();
@@ -116,6 +118,11 @@ function InnerEditorCanvas({
   const [isDirty, setIsDirty] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [credentials, setCredentials] = useState<Array<{ id: string; type: string; name: string }>>([]);
+
+  // Sync nodes and edges with parent component if callback provided
+  useEffect(() => {
+    onNodesUpdate?.(nodes, edges);
+  }, [nodes, edges, onNodesUpdate]);
 
   // Fetch available credentials
   useEffect(() => {

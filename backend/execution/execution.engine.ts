@@ -54,11 +54,29 @@ export const executeWorkflow = async (workflowId: string) => {
       throw err;
     }
 
+    // Collect incoming inputs passed to this node
+    const incomingConnections = workflow.connections.filter(
+      (connection) => connection.toNodeId === node.id,
+    );
+    const incomingInputs: Record<string, any> = {};
+    for (const connection of incomingConnections) {
+      if (context.results[connection.fromNodeId] !== undefined) {
+        incomingInputs[connection.fromNodeId] = context.results[connection.fromNodeId];
+      }
+    }
+
+    const sentPayload = {
+      nodeData: node.data,
+      incomingInputs: Object.keys(incomingInputs).length > 0 ? incomingInputs : null,
+    };
+
     // Emit node start event -> frontend turns border GREEN
     emitToWorkflow(workflowId, "workflow:node:start", {
       workflowId,
       nodeId: node.id,
       nodeType: node.type,
+      nodeTitle: node.name,
+      sent: sentPayload,
     });
 
     try {
@@ -71,6 +89,8 @@ export const executeWorkflow = async (workflowId: string) => {
         workflowId,
         nodeId: node.id,
         nodeType: node.type,
+        nodeTitle: node.name,
+        sent: sentPayload,
         result,
       });
 
@@ -90,6 +110,8 @@ export const executeWorkflow = async (workflowId: string) => {
         workflowId,
         nodeId: node.id,
         nodeType: node.type,
+        nodeTitle: node.name,
+        sent: sentPayload,
         error: errMsg,
       });
       throw error;

@@ -22,9 +22,9 @@ import CreateWorkflowModal from "./components/CreateWorkflowModal";
 
 const TABS = [
   { key: "all", label: "All" },
-  { key: "draft", label: "Drafts" },
-  { key: "ongoing", label: "Ongoing" },
+  { key: "draft", label: "Draft" },
   { key: "completed", label: "Completed" },
+  { key: "ongoing", label: "Ongoing" },
   { key: "failed", label: "Failed" },
 ] as const;
 
