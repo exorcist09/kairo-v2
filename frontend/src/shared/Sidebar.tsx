@@ -53,9 +53,10 @@ export default function Sidebar() {
             <Image
               src="/Kairo.png"
               alt="Logo"
-              width={180}
-              height={40}
-              className="brightness-0"
+              width={112}
+              height={32}
+              className="h-8 w-auto object-contain brightness-0"
+              priority
             />
           </Link>
 

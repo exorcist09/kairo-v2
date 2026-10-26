@@ -65,10 +65,57 @@ const loadRazorpayScript = (): Promise<boolean> => {
   });
 };
 
+// ─── Static Credit Packs & Pricing (Completely static and decoupled from user balance) ───
+const STATIC_FREE_TIER = {
+  name: "Free Tier",
+  credits: 100,
+  creditsLabel: "100 credits",
+  formattedPrice: "Free",
+  unitPrice: "Included with account",
+};
+
+const STATIC_PRESET_PACKS = [
+  {
+    id: "small",
+    backendType: "SMALL" as const,
+    name: "Small Tier",
+    credits: 250,
+    price: 99,
+    formattedPrice: "₹99",
+    unitPrice: "₹0.40 / credit",
+  },
+  {
+    id: "medium",
+    backendType: "MEDIUM" as const,
+    name: "Medium Tier",
+    credits: 800,
+    price: 299,
+    formattedPrice: "₹299",
+    unitPrice: "₹0.37 / credit",
+    badge: "Most Popular",
+    savings: "Best Value",
+  },
+  {
+    id: "large",
+    backendType: "LARGE" as const,
+    name: "Large Tier",
+    credits: 1500,
+    price: 499,
+    formattedPrice: "₹499",
+    unitPrice: "₹0.33 / credit",
+    savings: "Save More",
+  },
+];
+
+const STATIC_CUSTOM_CONFIG = {
+  minCredits: 100,
+  maxCredits: 10000,
+  pricePerCredit: 0.45,
+};
+
 export default function Billing() {
   const {
     balance,
-    plans,
     history,
     loading,
     hasLoaded,
@@ -92,81 +139,9 @@ export default function Billing() {
     fetchBillingData(true);
   }, [fetchBillingData]);
 
-  // Dynamic Free Tier from DB plans
-  const freeTier = useMemo(() => {
-    const found = plans.find((p) => p.type === "FREE_TIER");
-    const cr = found?.credits ?? 50;
-    return {
-      name: "Free Tier",
-      credits: cr,
-      creditsLabel: `${cr.toLocaleString()} credits / month`,
-      formattedPrice: "Free",
-      unitPrice: "Included with account",
-    };
-  }, [plans]);
-
-  // Dynamic Preset Packs from DB plans
-  const presetPacks = useMemo(() => {
-    const small = plans.find((p) => p.type === "SMALL");
-    const medium = plans.find((p) => p.type === "MEDIUM");
-    const large = plans.find((p) => p.type === "LARGE");
-
-    const sCredits = small?.credits ?? 100;
-    const sPrice = Number(small?.price ?? 99);
-
-    const mCredits = medium?.credits ?? 500;
-    const mPrice = Number(medium?.price ?? 299);
-
-    const lCredits = large?.credits ?? 1200;
-    const lPrice = Number(large?.price ?? 499);
-
-    return [
-      {
-        id: "small",
-        backendType: "SMALL" as const,
-        name: "Small Tier",
-        credits: sCredits,
-        price: sPrice,
-        formattedPrice: `₹${sPrice.toLocaleString("en-IN")}`,
-        unitPrice: `₹${(sPrice / sCredits).toFixed(2)} / credit`,
-      },
-      {
-        id: "medium",
-        backendType: "MEDIUM" as const,
-        name: "Medium Tier",
-        credits: mCredits,
-        price: mPrice,
-        formattedPrice: `₹${mPrice.toLocaleString("en-IN")}`,
-        unitPrice: `₹${(mPrice / mCredits).toFixed(2)} / credit`,
-        badge: "Most Popular",
-        savings: "Best Value",
-      },
-      {
-        id: "large",
-        backendType: "LARGE" as const,
-        name: "Large Tier",
-        credits: lCredits,
-        price: lPrice,
-        formattedPrice: `₹${lPrice.toLocaleString("en-IN")}`,
-        unitPrice: `₹${(lPrice / lCredits).toFixed(2)} / credit`,
-        savings: "Save More",
-      },
-    ];
-  }, [plans]);
-
-  // Dynamic Custom Plan Config from DB
-  const customConfig = useMemo(() => {
-    const custom = plans.find((p) => p.type === "CUSTOM");
-    return {
-      minCredits: custom?.minCredits ?? 100,
-      maxCredits: custom?.maxCredits ?? 10000,
-      pricePerCredit: Number(custom?.pricePerCredit ?? 0.4),
-    };
-  }, [plans]);
-
   const calculateCustomPrice = (credits: number | "") => {
     if (!credits || credits <= 0) return 0;
-    return Number((Number(credits) * customConfig.pricePerCredit).toFixed(2));
+    return Number((Number(credits) * STATIC_CUSTOM_CONFIG.pricePerCredit).toFixed(2));
   };
 
   const getPurchaseSummary = () => {
@@ -174,7 +149,7 @@ export default function Billing() {
       const cr = customCredits ? Number(customCredits) : 0;
       const pr = calculateCustomPrice(customCredits);
       const isWithinLimits =
-        cr >= customConfig.minCredits && cr <= customConfig.maxCredits;
+        cr >= STATIC_CUSTOM_CONFIG.minCredits && cr <= STATIC_CUSTOM_CONFIG.maxCredits;
 
       return {
         credits: cr,
@@ -185,16 +160,16 @@ export default function Billing() {
         buttonText:
           cr <= 0
             ? "Enter custom credit amount"
-            : cr < customConfig.minCredits
-            ? `Minimum ${customConfig.minCredits} credits required`
-            : cr > customConfig.maxCredits
-            ? `Maximum ${customConfig.maxCredits.toLocaleString()} credits allowed`
+            : cr < STATIC_CUSTOM_CONFIG.minCredits
+            ? `Minimum ${STATIC_CUSTOM_CONFIG.minCredits} credits required`
+            : cr > STATIC_CUSTOM_CONFIG.maxCredits
+            ? `Maximum ${STATIC_CUSTOM_CONFIG.maxCredits.toLocaleString()} credits allowed`
             : `Purchase ${cr.toLocaleString()} Credits • ₹${pr.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
         isValid: isWithinLimits,
       };
     }
 
-    const pack = presetPacks.find((p) => p.id === selectedPack) || presetPacks[1];
+    const pack = STATIC_PRESET_PACKS.find((p) => p.id === selectedPack) || STATIC_PRESET_PACKS[1];
     return {
       credits: pack.credits,
       priceStr: pack.formattedPrice,
@@ -421,23 +396,23 @@ export default function Billing() {
                     <Circle weight="regular" className="w-5 h-5 text-gray-400 flex-shrink-0" />
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-semibold text-sm text-gray-700">
-                        {freeTier.name} - {freeTier.creditsLabel}
+                        {STATIC_FREE_TIER.name} - {STATIC_FREE_TIER.creditsLabel}
                       </span>
                       <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-gray-200 text-gray-600">
-                        Current Free Plan
+                        Free Plan
                       </span>
                     </div>
                   </div>
 
                   <div className="flex items-baseline gap-2 mt-2 sm:mt-0 ml-8 sm:ml-0">
-                    <span className="text-[11px] text-gray-400 font-medium">{freeTier.unitPrice}</span>
-                    <span className="font-bold text-sm text-gray-500">{freeTier.formattedPrice}</span>
+                    <span className="text-[11px] text-gray-400 font-medium">{STATIC_FREE_TIER.unitPrice}</span>
+                    <span className="font-bold text-sm text-gray-500">{STATIC_FREE_TIER.formattedPrice}</span>
                   </div>
                 </div>
 
                 {/* 2. Three Square Boxes for Small, Medium, Large */}
                 <div className="z-10 relative grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {presetPacks.map((pack) => {
+                  {STATIC_PRESET_PACKS.map((pack) => {
                     const isSelected = selectedPack === pack.id;
                     return (
                       <div
@@ -510,7 +485,7 @@ export default function Billing() {
                       <div>
                         <span className="font-bold text-sm text-gray-900">Custom Credits</span>
                         <p className="text-xs text-gray-500 font-medium">
-                          Top up any custom amount from {customConfig.minCredits.toLocaleString()} to {customConfig.maxCredits.toLocaleString()} credits at ₹{customConfig.pricePerCredit.toFixed(2)} / credit
+                          Top up any custom amount from {STATIC_CUSTOM_CONFIG.minCredits.toLocaleString()} to {STATIC_CUSTOM_CONFIG.maxCredits.toLocaleString()} credits at ₹{STATIC_CUSTOM_CONFIG.pricePerCredit.toFixed(2)} / credit
                         </p>
                       </div>
                     </div>
@@ -518,7 +493,7 @@ export default function Billing() {
                     <span className="text-sm font-bold text-blue-600 self-end sm:self-auto">
                       {selectedPack === "custom" && customCredits
                         ? `₹${calculateCustomPrice(customCredits).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-                        : `₹${customConfig.pricePerCredit.toFixed(2)} per credit`}
+                        : `₹${STATIC_CUSTOM_CONFIG.pricePerCredit.toFixed(2)} per credit`}
                     </span>
                   </div>
 
@@ -530,10 +505,10 @@ export default function Billing() {
                       <div className="relative flex-1">
                         <input
                           type="number"
-                          min={customConfig.minCredits}
-                          max={customConfig.maxCredits}
+                          min={STATIC_CUSTOM_CONFIG.minCredits}
+                          max={STATIC_CUSTOM_CONFIG.maxCredits}
                           step="100"
-                          placeholder={`Enter amount (${customConfig.minCredits} - ${customConfig.maxCredits.toLocaleString()})`}
+                          placeholder={`Enter amount (${STATIC_CUSTOM_CONFIG.minCredits} - ${STATIC_CUSTOM_CONFIG.maxCredits.toLocaleString()})`}
                           value={customCredits}
                           onChange={(e) =>
                             setCustomCredits(e.target.value ? Math.max(0, Number(e.target.value)) : "")
@@ -554,7 +529,7 @@ export default function Billing() {
                             onClick={() => setCustomCredits(amt)}
                             className="px-3 py-2 bg-gray-50 hover:bg-gray-100 border border-gray-200/80 rounded-xl text-xs font-semibold text-gray-600 hover:text-gray-900 transition-colors cursor-pointer"
                           >
-                            +{amt.toLocaleString()}
+                            {amt.toLocaleString()}
                           </button>
                         ))}
                       </div>

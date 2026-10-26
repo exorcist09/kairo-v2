@@ -38,21 +38,21 @@ const DEFAULT_ANALYTICS_DATA: Record<
     labels: ["00:00", "04:00", "08:00", "12:00", "16:00", "20:00", "Now"],
     yAxis: ["10", "8", "5", "2", "0"],
     total: "0",
-    successRate: "100%",
+    successRate: "0%",
   },
   "7 Days": {
     points: "0,90 16,90 33,90 50,90 66,90 83,90 100,90",
     labels: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
     yAxis: ["10", "8", "5", "2", "0"],
     total: "0",
-    successRate: "100%",
+    successRate: "0%",
   },
   "30 Days": {
     points: "0,90 25,90 50,90 75,90 100,90",
     labels: ["Day 1", "Day 8", "Day 15", "Day 22", "Day 30"],
     yAxis: ["10", "8", "5", "2", "0"],
     total: "0",
-    successRate: "100%",
+    successRate: "0%",
   },
 };
 
@@ -217,18 +217,7 @@ export default function Home() {
                       {(analyticsData?.cards.executionsToday ?? 0).toLocaleString()}
                     </div>
                     <p className="text-xs text-gray-500 font-medium">
-                      {analyticsData?.cards.percentChangeVsYesterday !== null &&
-                      analyticsData?.cards.percentChangeVsYesterday !== undefined ? (
-                        `${
-                          analyticsData.cards.percentChangeVsYesterday >= 0
-                            ? `+${analyticsData.cards.percentChangeVsYesterday}%`
-                            : `${analyticsData.cards.percentChangeVsYesterday}%`
-                        } vs yesterday`
-                      ) : (analyticsData?.cards.executionsToday ?? 0) > 0 ? (
-                        "Runs logged today"
-                      ) : (
-                        "No executions today"
-                      )}
+                      Runs logged today
                     </p>
                   </div>
                   <div className="absolute right-0 top-0 bottom-0 w-32 opacity-10 pointer-events-none flex items-center justify-end pr-2">
@@ -249,13 +238,13 @@ export default function Home() {
                       {analyticsData?.cards.totalExecutions &&
                       analyticsData.cards.totalExecutions > 0
                         ? `${analyticsData.cards.successRate.toFixed(1)}%`
-                        : "100.0%"}
+                        : "0%"}
                     </div>
                     <p className="text-xs text-gray-500 font-medium">
                       {analyticsData?.cards.totalExecutions &&
                       analyticsData.cards.totalExecutions > 0
                         ? `${analyticsData.cards.completedExecutions} of ${analyticsData.cards.totalExecutions} succeeded`
-                        : "100% baseline rate"}
+                        : "No executions yet"}
                     </p>
                   </div>
                   <div className="absolute right-0 top-0 bottom-0 w-32 opacity-10 pointer-events-none flex items-center justify-end pr-2">

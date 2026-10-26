@@ -124,7 +124,7 @@ export const getHomeAnalytics = async (
   const successRate =
     totalExecutions > 0
       ? Math.round((completedExecutions / totalExecutions) * 1000) / 10
-      : 100;
+      : 0;
 
   // Executions Today
   const executionsTodayList = executionsLast30Days.filter(
@@ -167,7 +167,7 @@ export const getHomeAnalytics = async (
   const todaySuccessRate =
     executionsToday > 0
       ? `${((todayCompleted / executionsToday) * 100).toFixed(1)}%`
-      : "100%";
+      : "0%";
 
   // --- Graph: 7 Days (7 daily intervals) ---
   const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -200,7 +200,7 @@ export const getHomeAnalytics = async (
   const sevenDaysSuccessRate =
     sevenDaysTotal > 0
       ? `${((sevenDaysCompleted / sevenDaysTotal) * 100).toFixed(1)}%`
-      : "100%";
+      : "0%";
 
   // --- Graph: 30 Days (5 intervals: 6-day buckets) ---
   const thirtyDaysLabels: string[] = [];
@@ -237,7 +237,7 @@ export const getHomeAnalytics = async (
   const thirtyDaysSuccessRate =
     thirtyDaysTotal > 0
       ? `${((thirtyDaysCompleted / thirtyDaysTotal) * 100).toFixed(1)}%`
-      : "100%";
+      : "0%";
 
   return {
     cards: {
